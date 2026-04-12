@@ -4,6 +4,8 @@ import ProfileHeader from "@/components/ProfileHeader";
 import CategoryStories from "@/components/CategoryStories";
 import DishGrid from "@/components/DishGrid";
 import DishFeed from "@/components/DishFeed";
+import CartFloatingButton from "@/components/CartFloatingButton";
+import CartModal from "@/components/CartModal";
 import { dishes, restaurantInfo } from "@/data/restaurant";
 
 const Index = () => {
@@ -89,6 +91,8 @@ const Index = () => {
           onClose={() => setFeedOpen(false)}
         />
       )}
+      <CartFloatingButton />
+      <CartModal />
     </div>
   );
 };

@@ -6,6 +6,8 @@ import DishGrid from "@/components/DishGrid";
 import DishFeed from "@/components/DishFeed";
 import CartFloatingButton from "@/components/CartFloatingButton";
 import CartModal from "@/components/CartModal";
+import AssistantFloatingButton from "@/components/AssistantFloatingButton";
+import AssistantModal from "@/components/AssistantModal";
 import { dishes, restaurantInfo } from "@/data/restaurant";
 
 const Index = () => {

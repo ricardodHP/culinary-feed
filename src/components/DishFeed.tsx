@@ -16,6 +16,21 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addItem, items } = useCart();
   const { toggleLike, isLiked } = useLikes();
+  const [heartAnimation, setHeartAnimation] = useState<string | null>(null);
+  const lastTapRef = useRef<Record<string, number>>({});
+
+  const handleDoubleTap = useCallback((dishId: string) => {
+    const now = Date.now();
+    const last = lastTapRef.current[dishId] || 0;
+    if (now - last < 300) {
+      if (!isLiked(dishId)) toggleLike(dishId);
+      setHeartAnimation(dishId);
+      setTimeout(() => setHeartAnimation(null), 800);
+      lastTapRef.current[dishId] = 0;
+    } else {
+      lastTapRef.current[dishId] = now;
+    }
+  }, [isLiked, toggleLike]);
 
   useEffect(() => {
     if (scrollRef.current) {

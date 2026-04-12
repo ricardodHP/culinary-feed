@@ -17,6 +17,7 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<"grid" | "ranked">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const filteredDishes = useMemo(() => {
     let result = dishes;

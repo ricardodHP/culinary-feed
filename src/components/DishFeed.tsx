@@ -3,6 +3,7 @@ import { Heart, Star, Plus, Check } from "lucide-react";
 import { type Dish } from "@/data/restaurant";
 import { restaurantInfo } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
+import { useLikes } from "@/contexts/LikesContext";
 import restaurantLogo from "@/assets/restaurant-logo.png";
 
 interface DishFeedProps {
@@ -14,6 +15,7 @@ interface DishFeedProps {
 const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addItem, items } = useCart();
+  const { toggleLike, isLiked } = useLikes();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -61,7 +63,9 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
             {/* Action bar */}
             <div className="flex items-center justify-between px-4 py-2">
               <div className="flex items-center gap-4">
-                <Heart className="w-6 h-6 text-foreground" />
+                <button onClick={() => toggleLike(dish.id)} className="active:scale-125 transition-transform">
+                  <Heart className={`w-6 h-6 transition-colors ${isLiked(dish.id) ? "text-red-500 fill-red-500" : "text-foreground"}`} />
+                </button>
                 <button
                   onClick={() => addItem(dish)}
                   className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity active:scale-95"

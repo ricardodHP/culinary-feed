@@ -13,14 +13,23 @@ const Index = () => {
   const [feedOpen, setFeedOpen] = useState(false);
   const [feedStartIndex, setFeedStartIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"grid" | "ranked">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const filteredDishes = useMemo(() => {
-    if (!activeCategory) return dishes;
-    if (activeCategory === "populares") {
-      return [...dishes].sort((a, b) => b.likes - a.likes);
+    let result = dishes;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((d) => d.name.toLowerCase().includes(q));
+    } else if (activeCategory === "populares") {
+      result = [...result].sort((a, b) => b.likes - a.likes);
+    } else if (activeCategory) {
+      result = result.filter((d) => d.category === activeCategory);
     }
-    return dishes.filter((d) => d.category === activeCategory);
-  }, [activeCategory]);
+
+    return result;
+  }, [activeCategory, searchQuery]);
 
   const handleDishClick = (index: number) => {
     setFeedStartIndex(index);

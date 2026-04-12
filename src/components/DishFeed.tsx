@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
-import { X, Heart, Star, ShoppingBag } from "lucide-react";
+import { X, Heart, Star, Plus, Check } from "lucide-react";
 import { type Dish } from "@/data/restaurant";
 import { restaurantInfo } from "@/data/restaurant";
+import { useCart } from "@/contexts/CartContext";
 import restaurantLogo from "@/assets/restaurant-logo.png";
 
 interface DishFeedProps {
@@ -12,6 +13,7 @@ interface DishFeedProps {
 
 const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { addItem, items } = useCart();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -60,7 +62,20 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
             <div className="flex items-center justify-between px-4 py-2">
               <div className="flex items-center gap-4">
                 <Heart className="w-6 h-6 text-foreground" />
-                <ShoppingBag className="w-6 h-6 text-foreground" />
+                <button
+                  onClick={() => addItem(dish)}
+                  className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity active:scale-95"
+                >
+                  {items.some((i) => i.dish.id === dish.id) ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" /> Agregar más
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" /> Agregar
+                    </>
+                  )}
+                </button>
               </div>
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-accent fill-accent" />

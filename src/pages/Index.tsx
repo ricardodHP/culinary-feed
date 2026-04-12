@@ -45,11 +45,35 @@ const Index = () => {
       {/* Top bar */}
       <div className="sticky top-0 z-20 bg-background border-b border-border px-4 py-2.5 flex items-center justify-between">
         <h2 className="text-base font-bold text-foreground">{restaurantInfo.username}</h2>
-        <div className="flex items-center gap-1 text-accent">
-          <Star className="w-4 h-4 fill-accent" />
-          <span className="text-sm font-semibold text-foreground">4.8</span>
+        <div className="flex items-center gap-3">
+          <button onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(""); }} className="text-foreground">
+            <Search className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-1 text-accent">
+            <Star className="w-4 h-4 fill-accent" />
+            <span className="text-sm font-semibold text-foreground">4.8</span>
+          </div>
         </div>
       </div>
+
+      {searchOpen && (
+        <div className="sticky top-[45px] z-20 bg-background border-b border-border px-4 py-2 flex items-center gap-2">
+          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+          <input
+            autoFocus
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar platillo..."
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="text-muted-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       <ProfileHeader />
       

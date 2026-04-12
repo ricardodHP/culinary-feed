@@ -96,6 +96,13 @@ const AssistantModal = ({ open, onClose }: Props) => {
     setStep(0);
     setAnswers({});
     setRecommendations(null);
+    setAddedIds(new Set());
+  };
+
+  const handleAdd = (dish: Dish) => {
+    addItem(dish);
+    setAddedIds((prev) => new Set(prev).add(dish.id));
+    toast.success(`${dish.name} agregado al carrito`);
   };
 
   const handleClose = () => {

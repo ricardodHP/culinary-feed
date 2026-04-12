@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Grid3X3, Star } from "lucide-react";
+import { Grid3X3, Star, Search, X } from "lucide-react";
 import ProfileHeader from "@/components/ProfileHeader";
 import CategoryStories from "@/components/CategoryStories";
 import DishGrid from "@/components/DishGrid";

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { X, Bot, ArrowRight, RotateCcw, ShoppingBag } from "lucide-react";
+import { X, Bot, ArrowRight, RotateCcw, ShoppingBag, Check } from "lucide-react";
 import { dishes, Dish } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
 
 interface Question {
   id: string;
@@ -88,12 +89,20 @@ const AssistantModal = ({ open, onClose }: Props) => {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [recommendations, setRecommendations] = useState<Dish[] | null>(null);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const { addItem } = useCart();
 
   const reset = () => {
     setStep(0);
     setAnswers({});
     setRecommendations(null);
+    setAddedIds(new Set());
+  };
+
+  const handleAdd = (dish: Dish) => {
+    addItem(dish);
+    setAddedIds((prev) => new Set(prev).add(dish.id));
+    toast.success(`${dish.name} agregado al carrito`);
   };
 
   const handleClose = () => {
@@ -180,11 +189,22 @@ const AssistantModal = ({ open, onClose }: Props) => {
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="text-sm font-bold text-primary">${dish.price}</span>
                       <button
-                        onClick={() => addItem(dish)}
-                        className="flex items-center gap-1 text-xs font-medium text-primary hover:opacity-80 transition-opacity"
+                        onClick={() => handleAdd(dish)}
+                        className={`flex items-center gap-1 text-xs font-medium transition-opacity ${
+                          addedIds.has(dish.id) ? "text-muted-foreground" : "text-primary hover:opacity-80"
+                        }`}
                       >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        Agregar
+                        {addedIds.has(dish.id) ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            Agregar más
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            Agregar
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

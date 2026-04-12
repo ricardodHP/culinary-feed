@@ -127,6 +127,8 @@ const Index = () => {
           onClose={() => setFeedOpen(false)}
         />
       )}
+      <AssistantFloatingButton onClick={() => setAssistantOpen(true)} />
+      <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} />
       <CartFloatingButton />
       <CartModal />
     </div>

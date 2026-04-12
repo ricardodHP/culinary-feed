@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { X, Bot, ArrowRight, RotateCcw, ShoppingBag } from "lucide-react";
+import { X, Bot, ArrowRight, RotateCcw, ShoppingBag, Check } from "lucide-react";
 import { dishes, Dish } from "@/data/restaurant";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 
 interface Question {

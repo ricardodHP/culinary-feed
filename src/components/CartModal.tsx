@@ -1,4 +1,4 @@
-import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
@@ -109,15 +109,29 @@ const CartModal = () => {
               <span className="text-sm text-muted-foreground">Total estimado</span>
               <span className="text-lg font-bold text-foreground">${totalPrice} MXN</span>
             </div>
-            <Button
-              className="w-full h-11 text-sm font-semibold"
-              onClick={() => {
-                setIsCartOpen(false);
-              }}
-            >
-              <ShoppingBag className="w-4 h-4 mr-2" />
-              Listo — Mostrar al mesero
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1 h-11 text-sm font-semibold"
+                onClick={() => setIsCartOpen(false)}
+              >
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Mostrar al mesero
+              </Button>
+              <Button
+                variant="outline"
+                className="h-11 px-4 text-sm font-semibold border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10"
+                onClick={() => {
+                  const lines = items.map(
+                    (i) => `• ${i.quantity}x ${i.dish.name} — $${i.dish.price * i.quantity}`
+                  );
+                  const msg = `🍽️ *Mi Pedido*\n\n${lines.join("\n")}\n\n*Total: $${totalPrice} MXN*`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                }}
+              >
+                <MessageCircle className="w-4 h-4" />
+                WhatsApp
+              </Button>
+            </div>
           </div>
         )}
       </div>

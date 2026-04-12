@@ -64,7 +64,10 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
         {dishes.map((dish) => (
           <div key={dish.id} className="border-b border-border animate-fade-in">
             {/* Dish image */}
-            <div className="aspect-square w-full">
+            <div
+              className="aspect-square w-full relative select-none"
+              onClick={() => handleDoubleTap(dish.id)}
+            >
               <img
                 src={dish.image}
                 alt={dish.name}
@@ -73,6 +76,11 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
                 height={512}
                 className="w-full h-full object-cover"
               />
+              {heartAnimation === dish.id && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <Heart className="w-20 h-20 text-white fill-white drop-shadow-lg animate-heart-pop" />
+                </div>
+              )}
             </div>
 
             {/* Action bar */}

@@ -6,6 +6,8 @@ import DishGrid from "@/components/DishGrid";
 import DishFeed from "@/components/DishFeed";
 import CartFloatingButton from "@/components/CartFloatingButton";
 import CartModal from "@/components/CartModal";
+import AssistantFloatingButton from "@/components/AssistantFloatingButton";
+import AssistantModal from "@/components/AssistantModal";
 import { dishes, restaurantInfo } from "@/data/restaurant";
 
 const Index = () => {
@@ -15,6 +17,7 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<"grid" | "ranked">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const filteredDishes = useMemo(() => {
     let result = dishes;
@@ -124,6 +127,8 @@ const Index = () => {
           onClose={() => setFeedOpen(false)}
         />
       )}
+      <AssistantFloatingButton onClick={() => setAssistantOpen(true)} />
+      <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} />
       <CartFloatingButton />
       <CartModal />
     </div>

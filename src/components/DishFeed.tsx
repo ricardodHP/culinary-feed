@@ -90,7 +90,7 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
             {/* Likes */}
             <div className="px-4 pb-1">
               <p className="text-sm font-semibold text-foreground">
-                {dish.likes.toLocaleString()} me gusta
+                {(dish.likes + (isLiked(dish.id) ? 1 : 0)).toLocaleString()} me gusta
               </p>
             </div>
 

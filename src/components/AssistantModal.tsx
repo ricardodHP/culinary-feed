@@ -89,6 +89,7 @@ const AssistantModal = ({ open, onClose }: Props) => {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [recommendations, setRecommendations] = useState<Dish[] | null>(null);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const { addItem } = useCart();
 
   const reset = () => {

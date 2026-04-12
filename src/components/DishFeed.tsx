@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { X, Heart, Star, Plus, Check } from "lucide-react";
+import { Heart, Star, Plus, Check } from "lucide-react";
 import { type Dish } from "@/data/restaurant";
 import { restaurantInfo } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
@@ -37,8 +37,8 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
           <img src={restaurantLogo} alt="" className="w-8 h-8 rounded-full object-cover" />
           <span className="text-sm font-semibold text-foreground">{restaurantInfo.username}</span>
         </div>
-        <button onClick={onClose} className="p-1 text-foreground">
-          <X className="w-6 h-6" />
+        <button onClick={onClose} className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80 transition-opacity">
+          ← Volver al menú
         </button>
       </div>
 

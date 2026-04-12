@@ -189,11 +189,22 @@ const AssistantModal = ({ open, onClose }: Props) => {
                     <div className="flex items-center justify-between mt-1.5">
                       <span className="text-sm font-bold text-primary">${dish.price}</span>
                       <button
-                        onClick={() => addItem(dish)}
-                        className="flex items-center gap-1 text-xs font-medium text-primary hover:opacity-80 transition-opacity"
+                        onClick={() => handleAdd(dish)}
+                        className={`flex items-center gap-1 text-xs font-medium transition-opacity ${
+                          addedIds.has(dish.id) ? "text-muted-foreground" : "text-primary hover:opacity-80"
+                        }`}
                       >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        Agregar
+                        {addedIds.has(dish.id) ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            Agregar más
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            Agregar
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

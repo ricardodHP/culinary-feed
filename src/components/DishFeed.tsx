@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Heart, Star, Plus, Check } from "lucide-react";
 import { type Dish } from "@/data/restaurant";
 import { restaurantInfo } from "@/data/restaurant";
@@ -16,6 +16,21 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addItem, items } = useCart();
   const { toggleLike, isLiked } = useLikes();
+  const [heartAnimation, setHeartAnimation] = useState<string | null>(null);
+  const lastTapRef = useRef<Record<string, number>>({});
+
+  const handleDoubleTap = useCallback((dishId: string) => {
+    const now = Date.now();
+    const last = lastTapRef.current[dishId] || 0;
+    if (now - last < 300) {
+      if (!isLiked(dishId)) toggleLike(dishId);
+      setHeartAnimation(dishId);
+      setTimeout(() => setHeartAnimation(null), 800);
+      lastTapRef.current[dishId] = 0;
+    } else {
+      lastTapRef.current[dishId] = now;
+    }
+  }, [isLiked, toggleLike]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -49,7 +64,10 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
         {dishes.map((dish) => (
           <div key={dish.id} className="border-b border-border animate-fade-in">
             {/* Dish image */}
-            <div className="aspect-square w-full">
+            <div
+              className="aspect-square w-full relative select-none"
+              onClick={() => handleDoubleTap(dish.id)}
+            >
               <img
                 src={dish.image}
                 alt={dish.name}
@@ -58,6 +76,11 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
                 height={512}
                 className="w-full h-full object-cover"
               />
+              {heartAnimation === dish.id && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <Heart className="w-20 h-20 text-white fill-white drop-shadow-lg animate-heart-pop" />
+                </div>
+              )}
             </div>
 
             {/* Action bar */}

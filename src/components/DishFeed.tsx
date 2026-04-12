@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Heart, Star, Plus, Check } from "lucide-react";
 import { type Dish } from "@/data/restaurant";
 import { restaurantInfo } from "@/data/restaurant";

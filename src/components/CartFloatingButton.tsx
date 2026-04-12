@@ -2,7 +2,9 @@ import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 const CartFloatingButton = () => {
-  const { totalItems, setIsCartOpen } = useCart();
+  const { totalItems, isCartOpen, setIsCartOpen } = useCart();
+
+  if (isCartOpen) return null;
 
   return (
     <button

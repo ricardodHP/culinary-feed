@@ -20,6 +20,8 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const { user, roles } = useAuth();
+  const accountHref = user ? getDefaultRouteForRoles(roles) : "/login";
 
   const filteredDishes = useMemo(() => {
     let result = dishes;
@@ -51,9 +53,12 @@ const Index = () => {
       <div className="sticky top-0 z-20 bg-background border-b border-border px-4 py-2.5 flex items-center justify-between">
         <h2 className="text-base font-bold text-foreground">{restaurantInfo.username}</h2>
         <div className="flex items-center gap-3">
-          <button onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(""); }} className="text-foreground">
+          <button onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(""); }} className="text-foreground" aria-label="Buscar">
             <Search className="w-5 h-5" />
           </button>
+          <Link to={accountHref} className="text-foreground" aria-label={user ? "Mi cuenta" : "Iniciar sesión"}>
+            <User className="w-5 h-5" />
+          </Link>
           <div className="flex items-center gap-1 text-accent">
             <Star className="w-4 h-4 fill-accent" />
             <span className="text-sm font-semibold text-foreground">4.8</span>

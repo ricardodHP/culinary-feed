@@ -14,16 +14,234 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          emoji: string | null
+          id: string
+          image_url: string | null
+          name: string
+          position: number
+          restaurant_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          position?: number
+          restaurant_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          position?: number
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dishes: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_featured: boolean
+          likes_count: number
+          name: string
+          position: number
+          price: number
+          rating: number
+          restaurant_id: string
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          likes_count?: number
+          name: string
+          position?: number
+          price?: number
+          rating?: number
+          restaurant_id: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          likes_count?: number
+          name?: string
+          position?: number
+          price?: number
+          rating?: number
+          restaurant_id?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dishes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dishes_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurants: {
+        Row: {
+          address: string | null
+          bio: string | null
+          created_at: string
+          cuisine_template: Database["public"]["Enums"]["cuisine_template"]
+          hours: string | null
+          id: string
+          instagram_link: string | null
+          logo_url: string | null
+          name: string
+          owner_id: string | null
+          phone: string | null
+          show_by_rating: boolean
+          slug: string
+          status: Database["public"]["Enums"]["restaurant_status"]
+          updated_at: string
+          whatsapp_link: string | null
+        }
+        Insert: {
+          address?: string | null
+          bio?: string | null
+          created_at?: string
+          cuisine_template?: Database["public"]["Enums"]["cuisine_template"]
+          hours?: string | null
+          id?: string
+          instagram_link?: string | null
+          logo_url?: string | null
+          name: string
+          owner_id?: string | null
+          phone?: string | null
+          show_by_rating?: boolean
+          slug: string
+          status?: Database["public"]["Enums"]["restaurant_status"]
+          updated_at?: string
+          whatsapp_link?: string | null
+        }
+        Update: {
+          address?: string | null
+          bio?: string | null
+          created_at?: string
+          cuisine_template?: Database["public"]["Enums"]["cuisine_template"]
+          hours?: string | null
+          id?: string
+          instagram_link?: string | null
+          logo_url?: string | null
+          name?: string
+          owner_id?: string | null
+          phone?: string | null
+          show_by_rating?: boolean
+          slug?: string
+          status?: Database["public"]["Enums"]["restaurant_status"]
+          updated_at?: string
+          whatsapp_link?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "owner" | "customer"
+      cuisine_template:
+        | "mexican"
+        | "italian"
+        | "chinese"
+        | "japanese"
+        | "generic"
+      restaurant_status: "draft" | "published"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +368,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "owner", "customer"],
+      cuisine_template: [
+        "mexican",
+        "italian",
+        "chinese",
+        "japanese",
+        "generic",
+      ],
+      restaurant_status: ["draft", "published"],
+    },
   },
 } as const

@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Heart, Star, Plus, Check } from "lucide-react";
-import { type Dish } from "@/data/restaurant";
-import { restaurantInfo } from "@/data/restaurant";
+import type { Dish, RestaurantInfo } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
 import { useLikes } from "@/contexts/LikesContext";
-import restaurantLogo from "@/assets/restaurant-logo.png";
 
 interface DishFeedProps {
   dishes: Dish[];
   startIndex: number;
+  restaurant: RestaurantInfo;
   onClose: () => void;
 }
 
-const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
+const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addItem, items } = useCart();
   const { toggleLike, isLiked } = useLikes();
@@ -51,8 +50,8 @@ const DishFeed = ({ dishes, startIndex, onClose }: DishFeedProps) => {
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-background border-b border-border">
         <div className="flex items-center gap-2">
-          <img src={restaurantLogo} alt="" className="w-8 h-8 rounded-full object-cover" />
-          <span className="text-sm font-semibold text-foreground">{restaurantInfo.username}</span>
+          <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
+          <span className="text-sm font-semibold text-foreground">{restaurant.username}</span>
         </div>
         <button onClick={onClose} className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80 transition-opacity">
           ← Volver al menú

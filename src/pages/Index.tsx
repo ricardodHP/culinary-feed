@@ -1,143 +1,118 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Grid3X3, Star, Search, X, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth, getDefaultRouteForRoles } from "@/contexts/AuthContext";
-import ProfileHeader from "@/components/ProfileHeader";
-import CategoryStories from "@/components/CategoryStories";
-import DishGrid from "@/components/DishGrid";
-import DishFeed from "@/components/DishFeed";
-import CartFloatingButton from "@/components/CartFloatingButton";
-import CartModal from "@/components/CartModal";
-import AssistantFloatingButton from "@/components/AssistantFloatingButton";
-import AssistantModal from "@/components/AssistantModal";
-import { dishes, restaurantInfo } from "@/data/restaurant";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { User, ChefHat } from "lucide-react";
+
+interface PublicRestaurant {
+  id: string;
+  name: string;
+  slug: string;
+  bio: string | null;
+  logo_url: string | null;
+  cuisine_template: string;
+}
 
 const Index = () => {
-  const [activeCategory, setActiveCategory] = useState<string | null>("populares");
-  const [feedOpen, setFeedOpen] = useState(false);
-  const [feedStartIndex, setFeedStartIndex] = useState(0);
-  const [viewMode, setViewMode] = useState<"grid" | "ranked">("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [restaurants, setRestaurants] = useState<PublicRestaurant[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user, roles } = useAuth();
   const accountHref = user ? getDefaultRouteForRoles(roles) : "/login";
 
-  const filteredDishes = useMemo(() => {
-    let result = dishes;
+  useEffect(() => {
+    supabase
+      .from("restaurants")
+      .select("id, name, slug, bio, logo_url, cuisine_template")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setRestaurants((data ?? []) as PublicRestaurant[]);
+        setLoading(false);
+      });
+  }, []);
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter((d) => d.name.toLowerCase().includes(q));
-    } else if (activeCategory === "populares") {
-      result = [...result].sort((a, b) => b.likes - a.likes);
-    } else if (activeCategory) {
-      result = result.filter((d) => d.category === activeCategory);
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
+        Cargando...
+      </div>
+    );
+  }
 
-    return result;
-  }, [activeCategory, searchQuery]);
-
-  const handleDishClick = (index: number) => {
-    setFeedStartIndex(index);
-    setFeedOpen(true);
-  };
-
-  const handleCategoryClick = (categoryId: string) => {
-    setActiveCategory(activeCategory === categoryId ? null : categoryId);
-  };
+  // If only one restaurant published, redirect to it directly.
+  if (restaurants.length === 1) {
+    return <Navigate to={`/r/${restaurants[0].slug}`} replace />;
+  }
 
   return (
-    <div className="max-w-lg mx-auto min-h-screen bg-background">
-      {/* Top bar */}
-      <div className="sticky top-0 z-20 bg-background border-b border-border px-4 py-2.5 flex items-center justify-between">
-        <h2 className="text-base font-bold text-foreground">{restaurantInfo.username}</h2>
-        <div className="flex items-center gap-3">
-          <button onClick={() => { setSearchOpen(!searchOpen); setSearchQuery(""); }} className="text-foreground" aria-label="Buscar">
-            <Search className="w-5 h-5" />
-          </button>
-          <Link to={accountHref} className="text-foreground" aria-label={user ? "Mi cuenta" : "Iniciar sesión"}>
-            <User className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center gap-1 text-accent">
-            <Star className="w-4 h-4 fill-accent" />
-            <span className="text-sm font-semibold text-foreground">4.8</span>
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border sticky top-0 z-10 bg-background">
+        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ChefHat className="w-5 h-5 text-primary" />
+            <h1 className="font-bold">Menús</h1>
           </div>
+          <Button asChild variant="ghost" size="sm">
+            <Link to={accountHref}>
+              <User className="w-4 h-4" /> {user ? "Mi cuenta" : "Iniciar sesión"}
+            </Link>
+          </Button>
         </div>
-      </div>
+      </header>
 
-      {searchOpen && (
-        <div className="sticky top-[45px] z-20 bg-background border-b border-border px-4 py-2 flex items-center gap-2">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-          <input
-            autoFocus
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar platillo..."
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="text-muted-foreground">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      )}
-
-      <ProfileHeader />
-      
-      <CategoryStories
-        activeCategory={activeCategory}
-        onCategoryClick={handleCategoryClick}
-      />
-
-      {/* Tab bar */}
-      <div className="flex border-b border-border">
-        <button
-          onClick={() => setViewMode("grid")}
-          className={`flex-1 py-2.5 flex justify-center border-b-2 transition-colors ${
-            viewMode === "grid"
-              ? "border-foreground text-foreground"
-              : "border-transparent text-muted-foreground"
-          }`}
-        >
-          <Grid3X3 className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => setViewMode("ranked")}
-          className={`flex-1 py-2.5 flex justify-center border-b-2 transition-colors ${
-            viewMode === "ranked"
-              ? "border-foreground text-foreground"
-              : "border-transparent text-muted-foreground"
-          }`}
-        >
-          <Star className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Content */}
-      {viewMode === "grid" ? (
-        <DishGrid dishes={filteredDishes} onDishClick={handleDishClick} />
-      ) : (
-        <DishGrid
-          dishes={[...filteredDishes].sort((a, b) => b.rating - a.rating)}
-          onDishClick={handleDishClick}
-        />
-      )}
-
-      {/* Feed overlay */}
-      {feedOpen && (
-        <DishFeed
-          dishes={filteredDishes}
-          startIndex={feedStartIndex}
-          onClose={() => setFeedOpen(false)}
-        />
-      )}
-      <AssistantFloatingButton onClick={() => setAssistantOpen(true)} />
-      <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} />
-      <CartFloatingButton />
-      <CartModal />
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        {restaurants.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground space-y-3">
+              <p>Aún no hay restaurantes publicados.</p>
+              {user && (
+                <Button asChild>
+                  <Link to={accountHref}>Ir a mi panel</Link>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold mb-1">Descubre menús</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Explora los restaurantes disponibles
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {restaurants.map((r) => (
+                <Link key={r.id} to={`/r/${r.slug}`} className="group">
+                  <Card className="overflow-hidden hover:shadow-elevated transition-shadow">
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-full bg-muted overflow-hidden shrink-0">
+                        {r.logo_url ? (
+                          <img src={r.logo_url} alt={r.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-2xl">
+                            🍽️
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold leading-tight group-hover:text-primary transition-colors">
+                          {r.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground truncate">/r/{r.slug}</p>
+                        {r.bio && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                            {r.bio}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+      </main>
     </div>
   );
 };

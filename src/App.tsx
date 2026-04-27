@@ -13,6 +13,8 @@ import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import AdminRestaurants from "./pages/admin/AdminRestaurants.tsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
+import DashboardCategories from "./pages/dashboard/DashboardCategories.tsx";
+import DashboardDishes from "./pages/dashboard/DashboardDishes.tsx";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +44,22 @@ const App = () => (
                   element={
                     <ProtectedRoute requiredRoles={["owner", "admin"]}>
                       <DashboardHome />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/categorias"
+                  element={
+                    <ProtectedRoute requiredRoles={["owner", "admin"]}>
+                      <DashboardCategories />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/platillos"
+                  element={
+                    <ProtectedRoute requiredRoles={["owner", "admin"]}>
+                      <DashboardDishes />
                     </ProtectedRoute>
                   }
                 />

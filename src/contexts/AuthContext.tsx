@@ -8,6 +8,8 @@ interface AuthContextValue {
   user: User | null;
   session: Session | null;
   roles: AppRole[];
+  isAdmin: boolean;
+  isOwner: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
@@ -59,8 +61,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setRoles([]);
   };
 
+  const isAdmin = roles.includes("admin");
+  const isOwner = roles.includes("owner");
+
   return (
-    <AuthContext.Provider value={{ user, session, roles, loading, signOut, refreshRoles }}>
+    <AuthContext.Provider
+      value={{ user, session, roles, isAdmin, isOwner, loading, signOut, refreshRoles }}
+    >
       {children}
     </AuthContext.Provider>
   );

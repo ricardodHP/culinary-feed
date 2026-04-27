@@ -1,61 +1,315 @@
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useManagedRestaurant } from "@/hooks/useManagedRestaurant";
+import { toast } from "sonner";
+import { ExternalLink, Upload, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
+import type { Database } from "@/integrations/supabase/types";
 
-interface MyRestaurant {
-  id: string;
-  name: string;
-  slug: string;
-  status: string;
-  bio: string | null;
-}
+type CuisineTemplate = Database["public"]["Enums"]["cuisine_template"];
+type RestaurantStatus = Database["public"]["Enums"]["restaurant_status"];
+
+const TEMPLATES: { value: CuisineTemplate; label: string }[] = [
+  { value: "generic", label: "Genérica" },
+  { value: "mexican", label: "Mexicana" },
+  { value: "italian", label: "Italiana" },
+  { value: "chinese", label: "China" },
+  { value: "japanese", label: "Japonesa" },
+];
 
 export default function DashboardHome() {
-  const { user } = useAuth();
-  const [restaurant, setRestaurant] = useState<MyRestaurant | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { restaurant, loading, reload } = useManagedRestaurant();
+  const [form, setForm] = useState({
+    name: "",
+    bio: "",
+    phone: "",
+    address: "",
+    hours: "",
+    whatsapp_link: "",
+    instagram_link: "",
+    cuisine_template: "generic" as CuisineTemplate,
+    show_by_rating: false,
+    status: "draft" as RestaurantStatus,
+    logo_url: "" as string | null,
+  });
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
-    supabase
+    if (!restaurant) return;
+    setForm({
+      name: restaurant.name,
+      bio: restaurant.bio ?? "",
+      phone: restaurant.phone ?? "",
+      address: restaurant.address ?? "",
+      hours: restaurant.hours ?? "",
+      whatsapp_link: restaurant.whatsapp_link ?? "",
+      instagram_link: restaurant.instagram_link ?? "",
+      cuisine_template: restaurant.cuisine_template,
+      show_by_rating: restaurant.show_by_rating,
+      status: restaurant.status,
+      logo_url: restaurant.logo_url,
+    });
+  }, [restaurant]);
+
+  const handleSave = async () => {
+    if (!restaurant) return;
+    setSaving(true);
+    const { error } = await supabase
       .from("restaurants")
-      .select("id, name, slug, status, bio")
-      .eq("owner_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        setRestaurant(data as MyRestaurant | null);
-        setLoading(false);
-      });
-  }, [user]);
+      .update({
+        name: form.name.trim(),
+        bio: form.bio || null,
+        phone: form.phone || null,
+        address: form.address || null,
+        hours: form.hours || null,
+        whatsapp_link: form.whatsapp_link || null,
+        instagram_link: form.instagram_link || null,
+        cuisine_template: form.cuisine_template,
+        show_by_rating: form.show_by_rating,
+        status: form.status,
+        logo_url: form.logo_url,
+      })
+      .eq("id", restaurant.id);
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Cambios guardados");
+      reload();
+    }
+  };
 
-  return (
-    <DashboardLayout>
-      <h2 className="text-2xl font-bold mb-1">Información del restaurante</h2>
-      <p className="text-sm text-muted-foreground mb-6">Edita los datos generales que verán tus clientes</p>
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!restaurant) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${restaurant.id}/logo-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("restaurant-logos")
+      .upload(path, file, { upsert: true });
+    if (upErr) {
+      toast.error(upErr.message);
+      setUploading(false);
+      return;
+    }
+    const { data: pub } = supabase.storage.from("restaurant-logos").getPublicUrl(path);
+    setForm((f) => ({ ...f, logo_url: pub.publicUrl }));
+    setUploading(false);
+    toast.success("Logo subido. Recuerda guardar los cambios.");
+  };
 
-      {loading ? (
+  const togglePublished = async () => {
+    if (!restaurant) return;
+    const newStatus: RestaurantStatus = form.status === "published" ? "draft" : "published";
+    setForm((f) => ({ ...f, status: newStatus }));
+    const { error } = await supabase
+      .from("restaurants")
+      .update({ status: newStatus })
+      .eq("id", restaurant.id);
+    if (error) toast.error(error.message);
+    else toast.success(newStatus === "published" ? "Menú publicado" : "Menú en borrador");
+    reload();
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
         <p className="text-sm text-muted-foreground">Cargando...</p>
-      ) : !restaurant ? (
+      </DashboardLayout>
+    );
+  }
+
+  if (!restaurant) {
+    return (
+      <DashboardLayout>
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">
             Aún no tienes un restaurante asignado. Pídele al administrador que cree uno y te asigne como dueño.
           </CardContent>
         </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>{restaurant.name}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p><span className="text-muted-foreground">Slug:</span> /r/{restaurant.slug}</p>
-            <p><span className="text-muted-foreground">Estado:</span> {restaurant.status}</p>
-            <p className="whitespace-pre-line text-muted-foreground">{restaurant.bio}</p>
-            <p className="text-xs text-muted-foreground pt-4">La edición completa estará disponible en la siguiente entrega.</p>
-          </CardContent>
-        </Card>
-      )}
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
+        <div>
+          <h2 className="text-2xl font-bold">Información del restaurante</h2>
+          <p className="text-sm text-muted-foreground">
+            Edita los datos generales que verán tus clientes
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant={form.status === "published" ? "default" : "secondary"}>
+            {form.status === "published" ? "Publicado" : "Borrador"}
+          </Badge>
+          <Button asChild variant="outline" size="sm">
+            <Link to={`/r/${restaurant.slug}`} target="_blank">
+              <Eye className="h-4 w-4" /> Preview
+            </Link>
+          </Button>
+          <Button size="sm" onClick={togglePublished}>
+            {form.status === "published" ? "Despublicar" : "Publicar"}
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-6 space-y-5">
+          <div className="flex items-center gap-4">
+            <div className="h-20 w-20 rounded-full bg-muted overflow-hidden flex items-center justify-center">
+              {form.logo_url ? (
+                <img src={form.logo_url} alt="Logo" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-xs text-muted-foreground">Sin logo</span>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="logo" className="cursor-pointer">
+                <div className="inline-flex items-center gap-2 text-sm font-medium border rounded-md px-3 py-2 hover:bg-accent">
+                  <Upload className="h-4 w-4" />
+                  {uploading ? "Subiendo..." : "Cambiar logo"}
+                </div>
+                <input
+                  id="logo"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                  disabled={uploading}
+                />
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">PNG o JPG, cuadrado.</p>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Nombre</Label>
+              <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="phone">Teléfono</Label>
+              <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="bio">Descripción</Label>
+            <Textarea
+              id="bio"
+              rows={3}
+              value={form.bio}
+              onChange={(e) => setForm({ ...form, bio: e.target.value })}
+              placeholder="Cuéntale a tus clientes de qué se trata tu restaurante"
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="address">Dirección</Label>
+              <Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            </div>
+            <div>
+              <Label htmlFor="hours">Horario</Label>
+              <Input
+                id="hours"
+                value={form.hours}
+                onChange={(e) => setForm({ ...form, hours: e.target.value })}
+                placeholder="Lun-Dom 12:00 - 22:00"
+              />
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="wa">WhatsApp (URL)</Label>
+              <Input
+                id="wa"
+                value={form.whatsapp_link}
+                onChange={(e) => setForm({ ...form, whatsapp_link: e.target.value })}
+                placeholder="https://wa.me/52..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="ig">Instagram (URL)</Label>
+              <Input
+                id="ig"
+                value={form.instagram_link}
+                onChange={(e) => setForm({ ...form, instagram_link: e.target.value })}
+                placeholder="https://instagram.com/..."
+              />
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Plantilla del menú</Label>
+              <Select
+                value={form.cuisine_template}
+                onValueChange={(v) => setForm({ ...form, cuisine_template: v as CuisineTemplate })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEMPLATES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Define colores y tipografía del menú público.
+              </p>
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label className="text-sm">Ordenar platillos por calificación</Label>
+                <p className="text-xs text-muted-foreground">
+                  Si está activo, los más populares aparecen primero.
+                </p>
+              </div>
+              <Switch
+                checked={form.show_by_rating}
+                onCheckedChange={(v) => setForm({ ...form, show_by_rating: v })}
+              />
+            </div>
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            URL pública:{" "}
+            <Link to={`/r/${restaurant.slug}`} target="_blank" className="text-primary inline-flex items-center gap-1">
+              /r/{restaurant.slug} <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </DashboardLayout>
   );
 }

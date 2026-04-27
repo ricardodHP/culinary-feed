@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Bot, ArrowRight, RotateCcw, ShoppingBag, Check } from "lucide-react";
-import { dishes, Dish } from "@/data/restaurant";
+import type { Dish } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 
@@ -41,39 +41,55 @@ const questions: Question[] = [
   },
 ];
 
-function getRecommendations(answers: Record<string, string>): Dish[] {
+function getRecommendations(answers: Record<string, string>, allDishes: Dish[]): Dish[] {
   const { mood, budget, extra } = answers;
 
-  let candidates = [...dishes];
+  const lc = (s: string) => (s ?? "").toLowerCase();
 
-  // Filter by mood
+  let candidates = [...allDishes];
+
+  // Filter by mood using tags + keywords
   if (mood === "carne") {
-    candidates = candidates.filter((d) => ["carnes", "populares"].includes(d.category));
+    candidates = candidates.filter((d) =>
+      [...d.tags.map(lc), lc(d.name), lc(d.description)].some((s) =>
+        /carne|res|pollo|cerdo|pastor|asad|premium/.test(s),
+      ),
+    );
   } else if (mood === "ligero") {
-    candidates = candidates.filter((d) => ["entradas", "bebidas"].includes(d.category));
+    candidates = candidates.filter((d) =>
+      [...d.tags.map(lc), lc(d.name), lc(d.description)].some((s) =>
+        /vegetar|ensalad|fresc|bebida|jugo|agua|ligero/.test(s),
+      ),
+    );
   } else if (mood === "calientito") {
-    candidates = candidates.filter((d) => ["sopas", "populares", "carnes"].includes(d.category));
+    candidates = candidates.filter((d) =>
+      [...d.tags.map(lc), lc(d.name), lc(d.description)].some((s) =>
+        /sopa|caldo|pozole|guisad|pasta|caliente/.test(s),
+      ),
+    );
   }
-  // sorpresa = no filter
 
-  // Filter by budget
-  if (budget === "bajo") {
-    candidates = candidates.filter((d) => d.price < 80);
-  } else if (budget === "medio") {
+  if (budget === "bajo") candidates = candidates.filter((d) => d.price < 80);
+  else if (budget === "medio")
     candidates = candidates.filter((d) => d.price >= 80 && d.price <= 130);
-  }
 
-  // Sort by rating
   candidates.sort((a, b) => b.rating - a.rating);
 
-  const main = candidates.length > 0 ? [candidates[0]] : [dishes[0]];
+  const main = candidates.length > 0 ? [candidates[0]] : [allDishes[0]].filter(Boolean);
 
-  // Add companion
+  // Companion picks based on extra
+  const pickCompanion = (regex: RegExp) =>
+    allDishes
+      .filter((d) =>
+        [...d.tags.map(lc), lc(d.name), lc(d.description)].some((s) => regex.test(s)),
+      )
+      .sort((a, b) => b.rating - a.rating)[0];
+
   if (extra === "bebida") {
-    const drink = dishes.filter((d) => d.category === "bebidas").sort((a, b) => b.rating - a.rating)[0];
+    const drink = pickCompanion(/bebida|jugo|agua|cocktail|margarita|refresco/);
     if (drink) main.push(drink);
   } else if (extra === "postre") {
-    const dessert = dishes.filter((d) => d.category === "postres").sort((a, b) => b.rating - a.rating)[0];
+    const dessert = pickCompanion(/postre|dulce|sweet|churro|flan|helado/);
     if (dessert) main.push(dessert);
   }
 
@@ -83,9 +99,10 @@ function getRecommendations(answers: Record<string, string>): Dish[] {
 interface Props {
   open: boolean;
   onClose: () => void;
+  dishes: Dish[];
 }
 
-const AssistantModal = ({ open, onClose }: Props) => {
+const AssistantModal = ({ open, onClose, dishes }: Props) => {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [recommendations, setRecommendations] = useState<Dish[] | null>(null);
@@ -117,7 +134,7 @@ const AssistantModal = ({ open, onClose }: Props) => {
     if (step < questions.length - 1) {
       setStep(step + 1);
     } else {
-      setRecommendations(getRecommendations(newAnswers));
+      setRecommendations(getRecommendations(newAnswers, dishes));
     }
   };
 

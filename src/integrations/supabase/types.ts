@@ -233,6 +233,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_users_with_roles: {
+        Args: never
+        Returns: {
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          roles: Database["public"]["Enums"]["app_role"][]
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "owner" | "customer"

@@ -11,7 +11,9 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
+import RestaurantPublic from "./pages/RestaurantPublic.tsx";
 import AdminRestaurants from "./pages/admin/AdminRestaurants.tsx";
+import AdminUsers from "./pages/admin/AdminUsers.tsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import DashboardCategories from "./pages/dashboard/DashboardCategories.tsx";
 import DashboardDishes from "./pages/dashboard/DashboardDishes.tsx";
@@ -29,6 +31,7 @@ const App = () => (
               <Sonner />
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/r/:slug" element={<RestaurantPublic />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route
@@ -36,6 +39,14 @@ const App = () => (
                   element={
                     <ProtectedRoute requiredRoles={["admin"]}>
                       <AdminRestaurants />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute requiredRoles={["admin"]}>
+                      <AdminUsers />
                     </ProtectedRoute>
                   }
                 />

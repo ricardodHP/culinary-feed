@@ -82,9 +82,8 @@ export default function Login() {
             Continuar con Google
           </Button>
 
-          <p className="text-sm text-center text-muted-foreground">
-            ¿No tienes cuenta?{" "}
-            <Link to="/signup" className="text-primary hover:underline font-medium">Regístrate</Link>
+          <p className="text-xs text-center text-muted-foreground">
+            ¿No tienes cuenta? Solicítala al administrador de la plataforma.
           </p>
           <p className="text-xs text-center text-muted-foreground">
             <Link to="/" className="hover:underline">← Volver al menú</Link>

@@ -371,23 +371,105 @@ export default function AdminRestaurants() {
       </Dialog>
 
       {/* Assign owner dialog */}
-      <Dialog open={!!assignFor} onOpenChange={(v) => !v && setAssignFor(null)}>
+      <Dialog
+        open={!!assignFor}
+        onOpenChange={(v) => {
+          if (!v) {
+            setAssignFor(null);
+            setAssignUserId(null);
+            setPickerOpen(false);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Asignar dueño a {assignFor?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {assignFor?.owner_id && (
+              <div className="text-xs bg-muted/50 border border-border rounded-md p-2">
+                <p className="text-muted-foreground">Dueño actual:</p>
+                <p className="font-medium">
+                  {usersById.get(assignFor.owner_id)?.display_name ||
+                    usersById.get(assignFor.owner_id)?.email ||
+                    "Usuario desconocido"}
+                </p>
+                {usersById.get(assignFor.owner_id)?.email && (
+                  <p className="text-muted-foreground">
+                    {usersById.get(assignFor.owner_id)?.email}
+                  </p>
+                )}
+              </div>
+            )}
             <div>
-              <Label htmlFor="email">Email del dueño</Label>
-              <Input
-                id="email"
-                type="email"
-                value={assignEmail}
-                onChange={(e) => setAssignEmail(e.target.value)}
-                placeholder="dueno@correo.com"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Deja vacío para remover el dueño actual. El usuario debe estar registrado.
+              <Label>Buscar usuario por correo</Label>
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between font-normal"
+                  >
+                    {assignUserId ? (
+                      <span className="truncate">
+                        {usersById.get(assignUserId)?.email ?? "Usuario seleccionado"}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Selecciona un usuario…</span>
+                    )}
+                    <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar por correo o nombre…" />
+                    <CommandList>
+                      <CommandEmpty>No se encontraron usuarios.</CommandEmpty>
+                      <CommandGroup>
+                        {users.map((u) => (
+                          <CommandItem
+                            key={u.id}
+                            value={`${u.email} ${u.display_name ?? ""}`}
+                            onSelect={() => {
+                              setAssignUserId(u.id);
+                              setPickerOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "h-3.5 w-3.5 mr-2",
+                                assignUserId === u.id ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm truncate">{u.email}</p>
+                              {u.display_name && (
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  {u.display_name}
+                                </p>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {assignUserId && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 h-7 text-xs text-muted-foreground"
+                  onClick={() => setAssignUserId(null)}
+                >
+                  <X className="h-3 w-3" /> Quitar selección (remover dueño)
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Al confirmar sin seleccionar usuario se removerá el dueño actual. El usuario
+                seleccionado obtendrá automáticamente el rol "owner".
               </p>
             </div>
           </div>

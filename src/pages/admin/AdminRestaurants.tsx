@@ -30,12 +30,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, ExternalLink, Pencil, Trash2, UserPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, ExternalLink, Pencil, Trash2, UserPlus, Check, ChevronsUpDown, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { slugify } from "@/lib/slug";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
 type CuisineTemplate = Database["public"]["Enums"]["cuisine_template"];

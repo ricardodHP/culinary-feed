@@ -10,7 +10,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
-import Signup from "./pages/Signup.tsx";
+import { Navigate } from "react-router-dom";
 import RestaurantPublic from "./pages/RestaurantPublic.tsx";
 import AdminRestaurants from "./pages/admin/AdminRestaurants.tsx";
 import AdminUsers from "./pages/admin/AdminUsers.tsx";
@@ -33,7 +33,8 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/r/:slug" element={<RestaurantPublic />} />
                 <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
+                {/* Public signup is disabled — admins create users from the panel */}
+                <Route path="/signup" element={<Navigate to="/login" replace />} />
                 <Route
                   path="/admin"
                   element={

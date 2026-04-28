@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, getDefaultRouteForRoles } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, ChefHat } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { User, ChefHat, Search, MapPin } from "lucide-react";
 
 interface PublicRestaurant {
   id: string;
@@ -12,19 +14,30 @@ interface PublicRestaurant {
   slug: string;
   bio: string | null;
   logo_url: string | null;
-  cuisine_template: string;
+  cuisine_template: "generic" | "mexican" | "italian" | "chinese" | "japanese";
+  address: string | null;
 }
+
+const CUISINE_LABELS: Record<PublicRestaurant["cuisine_template"], { label: string; emoji: string }> = {
+  generic: { label: "Variada", emoji: "🍽️" },
+  mexican: { label: "Mexicana", emoji: "🌮" },
+  italian: { label: "Italiana", emoji: "🍝" },
+  chinese: { label: "China", emoji: "🥡" },
+  japanese: { label: "Japonesa", emoji: "🍣" },
+};
 
 const Index = () => {
   const [restaurants, setRestaurants] = useState<PublicRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [activeCuisine, setActiveCuisine] = useState<string>("all");
   const { user, roles } = useAuth();
   const accountHref = user ? getDefaultRouteForRoles(roles) : "/login";
 
   useEffect(() => {
     supabase
       .from("restaurants")
-      .select("id, name, slug, bio, logo_url, cuisine_template")
+      .select("id, name, slug, bio, logo_url, cuisine_template, address")
       .eq("status", "published")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
@@ -33,22 +46,27 @@ const Index = () => {
       });
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Cargando...
-      </div>
-    );
-  }
+  const availableCuisines = useMemo(() => {
+    const set = new Set(restaurants.map((r) => r.cuisine_template));
+    return Array.from(set);
+  }, [restaurants]);
 
-  // If only one restaurant published, redirect to it directly.
-  if (restaurants.length === 1) {
-    return <Navigate to={`/r/${restaurants[0].slug}`} replace />;
-  }
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return restaurants.filter((r) => {
+      if (activeCuisine !== "all" && r.cuisine_template !== activeCuisine) return false;
+      if (!q) return true;
+      return (
+        r.name.toLowerCase().includes(q) ||
+        (r.bio ?? "").toLowerCase().includes(q) ||
+        (r.address ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [restaurants, search, activeCuisine]);
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border sticky top-0 z-10 bg-background">
+      <header className="border-b border-border sticky top-0 z-10 bg-background/95 backdrop-blur">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ChefHat className="w-5 h-5 text-primary" />
@@ -62,55 +80,100 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        {restaurants.length === 0 ? (
+      <main className="max-w-3xl mx-auto px-4 py-6">
+        <h2 className="text-2xl font-bold mb-1">Descubre menús</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Explora restaurantes por tipo de cocina o ubicación
+        </p>
+
+        {/* Search */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o ciudad…"
+            className="pl-9"
+          />
+        </div>
+
+        {/* Cuisine filters */}
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
+          <button
+            onClick={() => setActiveCuisine("all")}
+            className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+              activeCuisine === "all"
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-foreground border-border hover:bg-muted"
+            }`}
+          >
+            🌎 Todas
+          </button>
+          {availableCuisines.map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveCuisine(c)}
+              className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                activeCuisine === c
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-foreground border-border hover:bg-muted"
+              }`}
+            >
+              {CUISINE_LABELS[c].emoji} {CUISINE_LABELS[c].label}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground py-12 text-center">Cargando…</p>
+        ) : filtered.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground space-y-3">
-              <p>Aún no hay restaurantes publicados.</p>
-              {user && (
-                <Button asChild>
-                  <Link to={accountHref}>Ir a mi panel</Link>
-                </Button>
-              )}
+              <p>
+                {restaurants.length === 0
+                  ? "Aún no hay restaurantes publicados."
+                  : "No encontramos restaurantes con esos filtros."}
+              </p>
             </CardContent>
           </Card>
         ) : (
-          <>
-            <h2 className="text-2xl font-bold mb-1">Descubre menús</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              Explora los restaurantes disponibles
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {restaurants.map((r) => (
-                <Link key={r.id} to={`/r/${r.slug}`} className="group">
-                  <Card className="overflow-hidden hover:shadow-elevated transition-shadow">
-                    <CardContent className="p-4 flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-full bg-muted overflow-hidden shrink-0">
-                        {r.logo_url ? (
-                          <img src={r.logo_url} alt={r.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-2xl">
-                            🍽️
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold leading-tight group-hover:text-primary transition-colors">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {filtered.map((r) => (
+              <Link key={r.id} to={`/r/${r.slug}`} className="group">
+                <Card className="overflow-hidden hover:shadow-elevated transition-shadow h-full">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-muted overflow-hidden shrink-0">
+                      {r.logo_url ? (
+                        <img src={r.logo_url} alt={r.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl">
+                          {CUISINE_LABELS[r.cuisine_template].emoji}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-semibold leading-tight group-hover:text-primary transition-colors truncate">
                           {r.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground truncate">/r/{r.slug}</p>
-                        {r.bio && (
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                            {r.bio}
-                          </p>
-                        )}
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
+                          {CUISINE_LABELS[r.cuisine_template].emoji} {CUISINE_LABELS[r.cuisine_template].label}
+                        </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </>
+                      {r.address && (
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                          <MapPin className="h-3 w-3 shrink-0" /> {r.address}
+                        </p>
+                      )}
+                      {r.bio && (
+                        <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{r.bio}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         )}
       </main>
     </div>

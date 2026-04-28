@@ -30,12 +30,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, ExternalLink, Pencil, Trash2, UserPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, ExternalLink, Pencil, Trash2, UserPlus, Check, ChevronsUpDown, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { slugify } from "@/lib/slug";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
 type CuisineTemplate = Database["public"]["Enums"]["cuisine_template"];
@@ -48,6 +51,13 @@ interface RestaurantRow {
   status: RestaurantStatus;
   cuisine_template: CuisineTemplate;
   owner_id: string | null;
+}
+
+interface UserRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  roles: string[];
 }
 
 const TEMPLATES: { value: CuisineTemplate; label: string }[] = [
@@ -73,8 +83,16 @@ export default function AdminRestaurants() {
   const [saving, setSaving] = useState(false);
 
   // assign form
-  const [assignEmail, setAssignEmail] = useState("");
+  const [assignUserId, setAssignUserId] = useState<string | null>(null);
   const [assigning, setAssigning] = useState(false);
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const usersById = useMemo(() => {
+    const m = new Map<string, UserRow>();
+    users.forEach((u) => m.set(u.id, u));
+    return m;
+  }, [users]);
 
   const load = async () => {
     setLoading(true);
@@ -87,8 +105,19 @@ export default function AdminRestaurants() {
     setLoading(false);
   };
 
+  const loadUsers = async () => {
+    const { data, error } = await (supabase.rpc as unknown as (
+      fn: string,
+    ) => Promise<{ data: UserRow[] | null; error: { message: string } | null }>)(
+      "list_users_with_roles",
+    );
+    if (error) toast.error(error.message);
+    else setUsers(data ?? []);
+  };
+
   useEffect(() => {
     load();
+    loadUsers();
   }, []);
 
   const openNew = () => {
@@ -154,27 +183,12 @@ export default function AdminRestaurants() {
   const handleAssignOwner = async () => {
     if (!assignFor) return;
     setAssigning(true);
-    let newOwnerId: string | null = null;
-    if (assignEmail.trim()) {
-      const { data, error } = await supabase.rpc("get_user_id_by_email", {
-        _email: assignEmail.trim(),
-      });
-      if (error) {
-        toast.error(error.message);
-        setAssigning(false);
-        return;
-      }
-      if (!data) {
-        toast.error("No existe ningún usuario con ese email. Pídele que se registre primero.");
-        setAssigning(false);
-        return;
-      }
-      newOwnerId = data as string;
-      // also ensure they have the 'owner' role
+    const newOwnerId = assignUserId;
+    if (newOwnerId) {
+      // Ensure they have the 'owner' role
       const { error: roleErr } = await supabase
         .from("user_roles")
         .insert({ user_id: newOwnerId, role: "owner" });
-      // ignore unique violation
       if (roleErr && !roleErr.message.includes("duplicate")) {
         toast.error(roleErr.message);
       }
@@ -187,8 +201,9 @@ export default function AdminRestaurants() {
     else toast.success(newOwnerId ? "Dueño asignado" : "Dueño removido");
     setAssigning(false);
     setAssignFor(null);
-    setAssignEmail("");
+    setAssignUserId(null);
     load();
+    loadUsers();
   };
 
   return (
@@ -227,7 +242,18 @@ export default function AdminRestaurants() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p>/r/{r.slug}</p>
                   <p>Plantilla: {TEMPLATES.find((t) => t.value === r.cuisine_template)?.label}</p>
-                  <p>{r.owner_id ? "Con dueño asignado" : "Sin dueño"}</p>
+                  <p>
+                    Dueño:{" "}
+                    {r.owner_id ? (
+                      <span className="text-foreground font-medium">
+                        {usersById.get(r.owner_id)?.display_name ||
+                          usersById.get(r.owner_id)?.email ||
+                          "—"}
+                      </span>
+                    ) : (
+                      <span className="italic">Sin dueño</span>
+                    )}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <Button asChild variant="outline" size="sm">
@@ -243,7 +269,7 @@ export default function AdminRestaurants() {
                     size="sm"
                     onClick={() => {
                       setAssignFor(r);
-                      setAssignEmail("");
+                      setAssignUserId(r.owner_id ?? null);
                     }}
                   >
                     <UserPlus className="h-3 w-3" /> Dueño
@@ -345,23 +371,105 @@ export default function AdminRestaurants() {
       </Dialog>
 
       {/* Assign owner dialog */}
-      <Dialog open={!!assignFor} onOpenChange={(v) => !v && setAssignFor(null)}>
+      <Dialog
+        open={!!assignFor}
+        onOpenChange={(v) => {
+          if (!v) {
+            setAssignFor(null);
+            setAssignUserId(null);
+            setPickerOpen(false);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Asignar dueño a {assignFor?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {assignFor?.owner_id && (
+              <div className="text-xs bg-muted/50 border border-border rounded-md p-2">
+                <p className="text-muted-foreground">Dueño actual:</p>
+                <p className="font-medium">
+                  {usersById.get(assignFor.owner_id)?.display_name ||
+                    usersById.get(assignFor.owner_id)?.email ||
+                    "Usuario desconocido"}
+                </p>
+                {usersById.get(assignFor.owner_id)?.email && (
+                  <p className="text-muted-foreground">
+                    {usersById.get(assignFor.owner_id)?.email}
+                  </p>
+                )}
+              </div>
+            )}
             <div>
-              <Label htmlFor="email">Email del dueño</Label>
-              <Input
-                id="email"
-                type="email"
-                value={assignEmail}
-                onChange={(e) => setAssignEmail(e.target.value)}
-                placeholder="dueno@correo.com"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Deja vacío para remover el dueño actual. El usuario debe estar registrado.
+              <Label>Buscar usuario por correo</Label>
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between font-normal"
+                  >
+                    {assignUserId ? (
+                      <span className="truncate">
+                        {usersById.get(assignUserId)?.email ?? "Usuario seleccionado"}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Selecciona un usuario…</span>
+                    )}
+                    <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar por correo o nombre…" />
+                    <CommandList>
+                      <CommandEmpty>No se encontraron usuarios.</CommandEmpty>
+                      <CommandGroup>
+                        {users.map((u) => (
+                          <CommandItem
+                            key={u.id}
+                            value={`${u.email} ${u.display_name ?? ""}`}
+                            onSelect={() => {
+                              setAssignUserId(u.id);
+                              setPickerOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "h-3.5 w-3.5 mr-2",
+                                assignUserId === u.id ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm truncate">{u.email}</p>
+                              {u.display_name && (
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  {u.display_name}
+                                </p>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {assignUserId && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 h-7 text-xs text-muted-foreground"
+                  onClick={() => setAssignUserId(null)}
+                >
+                  <X className="h-3 w-3" /> Quitar selección (remover dueño)
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Al confirmar sin seleccionar usuario se removerá el dueño actual. El usuario
+                seleccionado obtendrá automáticamente el rol "owner".
               </p>
             </div>
           </div>

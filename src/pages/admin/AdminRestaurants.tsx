@@ -53,6 +53,13 @@ interface RestaurantRow {
   owner_id: string | null;
 }
 
+interface UserRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  roles: string[];
+}
+
 const TEMPLATES: { value: CuisineTemplate; label: string }[] = [
   { value: "generic", label: "Genérica" },
   { value: "mexican", label: "Mexicana" },
@@ -76,8 +83,16 @@ export default function AdminRestaurants() {
   const [saving, setSaving] = useState(false);
 
   // assign form
-  const [assignEmail, setAssignEmail] = useState("");
+  const [assignUserId, setAssignUserId] = useState<string | null>(null);
   const [assigning, setAssigning] = useState(false);
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const usersById = useMemo(() => {
+    const m = new Map<string, UserRow>();
+    users.forEach((u) => m.set(u.id, u));
+    return m;
+  }, [users]);
 
   const load = async () => {
     setLoading(true);
@@ -88,6 +103,16 @@ export default function AdminRestaurants() {
     if (error) toast.error(error.message);
     setRestaurants((data ?? []) as RestaurantRow[]);
     setLoading(false);
+  };
+
+  const loadUsers = async () => {
+    const { data, error } = await (supabase.rpc as unknown as (
+      fn: string,
+    ) => Promise<{ data: UserRow[] | null; error: { message: string } | null }>)(
+      "list_users_with_roles",
+    );
+    if (error) toast.error(error.message);
+    else setUsers(data ?? []);
   };
 
   useEffect(() => {

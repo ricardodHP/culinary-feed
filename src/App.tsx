@@ -17,6 +17,7 @@ import AdminUsers from "./pages/admin/AdminUsers.tsx";
 import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import DashboardCategories from "./pages/dashboard/DashboardCategories.tsx";
 import DashboardDishes from "./pages/dashboard/DashboardDishes.tsx";
+import DashboardStats from "./pages/dashboard/DashboardStats.tsx";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,14 @@ const App = () => (
                   element={
                     <ProtectedRoute requiredRoles={["owner", "admin"]}>
                       <DashboardDishes />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/estadisticas"
+                  element={
+                    <ProtectedRoute requiredRoles={["owner", "admin"]}>
+                      <DashboardStats />
                     </ProtectedRoute>
                   }
                 />

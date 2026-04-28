@@ -2,13 +2,14 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Store, UtensilsCrossed, Tag } from "lucide-react";
+import { LogOut, Store, UtensilsCrossed, Tag, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/dashboard", label: "Información", icon: Store },
   { to: "/dashboard/categorias", label: "Categorías", icon: Tag },
   { to: "/dashboard/platillos", label: "Platillos", icon: UtensilsCrossed },
+  { to: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3 },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

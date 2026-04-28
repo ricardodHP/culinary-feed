@@ -51,6 +51,7 @@ interface DishRow {
   likes_count: number;
   tags: string[];
   is_featured: boolean;
+  is_active: boolean;
   category_id: string | null;
   position: number;
 }
@@ -63,6 +64,7 @@ interface DishForm {
   category_id: string | null;
   tags: string;
   is_featured: boolean;
+  is_active: boolean;
 }
 
 const emptyForm: DishForm = {
@@ -73,6 +75,7 @@ const emptyForm: DishForm = {
   category_id: null,
   tags: "",
   is_featured: false,
+  is_active: true,
 };
 
 export default function DashboardDishes() {
@@ -93,7 +96,7 @@ export default function DashboardDishes() {
     const [dRes, cRes] = await Promise.all([
       supabase
         .from("dishes")
-        .select("id, name, description, price, image_url, rating, likes_count, tags, is_featured, category_id, position")
+        .select("id, name, description, price, image_url, rating, likes_count, tags, is_featured, is_active, category_id, position")
         .eq("restaurant_id", restaurant.id)
         .order("position", { ascending: true }),
       supabase
@@ -130,6 +133,7 @@ export default function DashboardDishes() {
       category_id: d.category_id,
       tags: d.tags.join(", "),
       is_featured: d.is_featured,
+      is_active: d.is_active,
     });
     setOpen(true);
   };
@@ -157,6 +161,7 @@ export default function DashboardDishes() {
         .map((t) => t.trim())
         .filter(Boolean),
       is_featured: form.is_featured,
+      is_active: form.is_active,
     };
     if (editing) {
       const { error } = await supabase.from("dishes").update(payload).eq("id", editing.id);

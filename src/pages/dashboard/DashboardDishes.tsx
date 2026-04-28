@@ -485,6 +485,18 @@ export default function DashboardDishes() {
                 Marcar como destacado
               </Label>
             </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label className="text-sm">Visible en el menú</Label>
+                <p className="text-xs text-muted-foreground">
+                  Si está apagado, los clientes no verán este platillo.
+                </p>
+              </div>
+              <Switch
+                checked={form.is_active}
+                onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>

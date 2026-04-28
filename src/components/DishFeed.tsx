@@ -101,7 +101,7 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
             {/* Dish image */}
             <div
               className="aspect-square w-full relative select-none"
-              onClick={() => handleDoubleTap(dish.id)}
+              onClick={() => handleImageTap(dish)}
             >
               <img
                 src={dish.image}

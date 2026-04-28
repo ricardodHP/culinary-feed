@@ -26,7 +26,7 @@ const AssistantFloatingButton = ({ onClick }: Props) => {
     <div className="fixed bottom-[104px] right-6 z-[55] flex items-center gap-2">
       {showTooltip && (
         <div className="flex items-center gap-1.5 bg-background border border-border rounded-full px-3 py-1.5 shadow-elevated animate-fade-in">
-          <span className="text-sm text-foreground whitespace-nowrap">¿Necesitas ayuda?</span>
+          <span className="text-sm text-foreground whitespace-nowrap">¿Te ayudo a elegir?</span>
           <button onClick={handleDismiss} className="text-muted-foreground hover:text-foreground">
             <X className="w-3.5 h-3.5" />
           </button>

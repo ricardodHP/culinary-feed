@@ -47,6 +47,12 @@ const ProfileHeader = ({ restaurant }: ProfileHeaderProps) => {
             {restaurant.bio}
           </p>
         )}
+        {(restaurant.address || restaurant.hours) && (
+          <div className="text-xs text-muted-foreground mt-2 space-y-0.5">
+            {restaurant.address && <p>📍 {restaurant.address}</p>}
+            {restaurant.hours && <p>🕒 {restaurant.hours}</p>}
+          </div>
+        )}
       </div>
 
       {/* Action buttons */}

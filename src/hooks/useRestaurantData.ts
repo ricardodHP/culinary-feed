@@ -55,8 +55,9 @@ export function useRestaurantData(slug: string | undefined): UseRestaurantDataRe
           .order("position", { ascending: true }),
         supabase
           .from("dishes")
-          .select("id, name, description, price, image_url, rating, likes_count, tags, category_id, position")
+          .select("id, name, description, price, image_url, rating, likes_count, tags, category_id, position, is_active")
           .eq("restaurant_id", r.id)
+          .eq("is_active", true)
           .order("position", { ascending: true }),
       ]);
       if (cancelled) return;
@@ -90,6 +91,8 @@ export function useRestaurantData(slug: string | undefined): UseRestaurantDataRe
         following: 0,
         whatsappLink: r.whatsapp_link ?? "",
         instagramLink: r.instagram_link ?? "",
+        address: r.address ?? undefined,
+        hours: r.hours ?? undefined,
         logo: r.logo_url ?? FALLBACK_LOGO,
         cuisineTemplate: r.cuisine_template,
         showByRating: r.show_by_rating,

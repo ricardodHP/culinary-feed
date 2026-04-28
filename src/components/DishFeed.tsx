@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Heart, Star, Plus, Check } from "lucide-react";
+import { Heart, Star, Plus, Check, X } from "lucide-react";
 import type { Dish, RestaurantInfo } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
 import { useLikes } from "@/contexts/LikesContext";
+import { trackEvent } from "@/lib/analytics";
 
 interface DishFeedProps {
   dishes: Dish[];
@@ -16,7 +17,9 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
   const { addItem, items } = useCart();
   const { toggleLike, isLiked } = useLikes();
   const [heartAnimation, setHeartAnimation] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   const lastTapRef = useRef<Record<string, number>>({});
+  const trackedRef = useRef<Set<string>>(new Set());
 
   const handleDoubleTap = useCallback((dishId: string) => {
     const now = Date.now();
@@ -40,10 +43,30 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    // Push a history entry so the browser back button closes the feed
+    // instead of navigating away from the menu.
+    window.history.pushState({ dishFeed: true }, "");
+    const handlePop = () => onClose();
+    window.addEventListener("popstate", handlePop);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("popstate", handlePop);
+      // If we're closing without popstate (user clicked button), pop our entry
+      if (window.history.state?.dishFeed) {
+        window.history.back();
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Track view per dish (once per session)
+  useEffect(() => {
+    const dish = dishes[startIndex];
+    if (dish && !trackedRef.current.has(dish.id)) {
+      trackedRef.current.add(dish.id);
+      trackEvent({ restaurantId: restaurant.id, eventType: "view", dishId: dish.id });
+    }
+  }, [startIndex, dishes, restaurant.id]);
 
   return (
     <div className="fixed inset-0 z-50 bg-background">

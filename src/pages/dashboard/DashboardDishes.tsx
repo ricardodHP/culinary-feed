@@ -301,7 +301,7 @@ export default function DashboardDishes() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((d) => (
-            <Card key={d.id} className="overflow-hidden">
+            <Card key={d.id} className={`overflow-hidden ${!d.is_active ? "opacity-60" : ""}`}>
               <div className="aspect-video bg-muted relative">
                 {d.image_url ? (
                   <img src={d.image_url} alt={d.name} className="w-full h-full object-cover" />
@@ -328,7 +328,7 @@ export default function DashboardDishes() {
                 {d.description && (
                   <p className="text-xs text-muted-foreground line-clamp-2">{d.description}</p>
                 )}
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   <span className="inline-flex items-center gap-1">
                     <Star className="h-3 w-3" /> {d.rating.toFixed(1)}
                   </span>
@@ -336,6 +336,17 @@ export default function DashboardDishes() {
                     <Heart className="h-3 w-3" /> {d.likes_count}
                   </span>
                   {d.is_featured && <Badge variant="secondary">Destacado</Badge>}
+                  {!d.is_active && <Badge variant="outline">Deshabilitado</Badge>}
+                </div>
+                <div className="flex items-center justify-between rounded-md border px-2 py-1.5">
+                  <Label htmlFor={`active-${d.id}`} className="text-xs cursor-pointer">
+                    Visible en el menú
+                  </Label>
+                  <Switch
+                    id={`active-${d.id}`}
+                    checked={d.is_active}
+                    onCheckedChange={() => toggleActive(d)}
+                  />
                 </div>
                 {d.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">

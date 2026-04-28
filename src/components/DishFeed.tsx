@@ -180,6 +180,31 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
           </div>
         ))}
       </div>
+
+      {/* Image lightbox */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center animate-fade-in"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxImage(null);
+            }}
+            className="absolute top-4 right-4 text-white/90 hover:text-white p-2"
+            aria-label="Cerrar imagen"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxImage.src}
+            alt={lightboxImage.alt}
+            className="max-w-[95vw] max-h-[90vh] object-contain animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

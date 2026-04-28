@@ -21,16 +21,29 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
   const lastTapRef = useRef<Record<string, number>>({});
   const trackedRef = useRef<Set<string>>(new Set());
 
-  const handleDoubleTap = useCallback((dishId: string) => {
+  const singleTapTimerRef = useRef<Record<string, ReturnType<typeof setTimeout> | null>>({});
+
+  const handleImageTap = useCallback((dish: Dish) => {
     const now = Date.now();
-    const last = lastTapRef.current[dishId] || 0;
+    const last = lastTapRef.current[dish.id] || 0;
     if (now - last < 300) {
-      if (!isLiked(dishId)) toggleLike(dishId);
-      setHeartAnimation(dishId);
+      // Double tap → like
+      if (!isLiked(dish.id)) toggleLike(dish.id);
+      setHeartAnimation(dish.id);
       setTimeout(() => setHeartAnimation(null), 800);
-      lastTapRef.current[dishId] = 0;
+      lastTapRef.current[dish.id] = 0;
+      const t = singleTapTimerRef.current[dish.id];
+      if (t) {
+        clearTimeout(t);
+        singleTapTimerRef.current[dish.id] = null;
+      }
     } else {
-      lastTapRef.current[dishId] = now;
+      lastTapRef.current[dish.id] = now;
+      // Delay single-tap action so double-tap can cancel it
+      singleTapTimerRef.current[dish.id] = setTimeout(() => {
+        setLightboxImage({ src: dish.image, alt: dish.name });
+        singleTapTimerRef.current[dish.id] = null;
+      }, 280);
     }
   }, [isLiked, toggleLike]);
 

@@ -242,7 +242,18 @@ export default function AdminRestaurants() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p>/r/{r.slug}</p>
                   <p>Plantilla: {TEMPLATES.find((t) => t.value === r.cuisine_template)?.label}</p>
-                  <p>{r.owner_id ? "Con dueño asignado" : "Sin dueño"}</p>
+                  <p>
+                    Dueño:{" "}
+                    {r.owner_id ? (
+                      <span className="text-foreground font-medium">
+                        {usersById.get(r.owner_id)?.display_name ||
+                          usersById.get(r.owner_id)?.email ||
+                          "—"}
+                      </span>
+                    ) : (
+                      <span className="italic">Sin dueño</span>
+                    )}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <Button asChild variant="outline" size="sm">
@@ -258,7 +269,7 @@ export default function AdminRestaurants() {
                     size="sm"
                     onClick={() => {
                       setAssignFor(r);
-                      setAssignEmail("");
+                      setAssignUserId(r.owner_id ?? null);
                     }}
                   >
                     <UserPlus className="h-3 w-3" /> Dueño

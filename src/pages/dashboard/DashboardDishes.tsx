@@ -200,6 +200,18 @@ export default function DashboardDishes() {
     else load();
   };
 
+  const toggleActive = async (d: DishRow) => {
+    const { error } = await supabase
+      .from("dishes")
+      .update({ is_active: !d.is_active })
+      .eq("id", d.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(d.is_active ? "Platillo deshabilitado" : "Platillo habilitado");
+      load();
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!restaurant) return;
     const file = e.target.files?.[0];

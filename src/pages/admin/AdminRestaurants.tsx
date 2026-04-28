@@ -117,6 +117,7 @@ export default function AdminRestaurants() {
 
   useEffect(() => {
     load();
+    loadUsers();
   }, []);
 
   const openNew = () => {
@@ -182,27 +183,12 @@ export default function AdminRestaurants() {
   const handleAssignOwner = async () => {
     if (!assignFor) return;
     setAssigning(true);
-    let newOwnerId: string | null = null;
-    if (assignEmail.trim()) {
-      const { data, error } = await supabase.rpc("get_user_id_by_email", {
-        _email: assignEmail.trim(),
-      });
-      if (error) {
-        toast.error(error.message);
-        setAssigning(false);
-        return;
-      }
-      if (!data) {
-        toast.error("No existe ningún usuario con ese email. Pídele que se registre primero.");
-        setAssigning(false);
-        return;
-      }
-      newOwnerId = data as string;
-      // also ensure they have the 'owner' role
+    const newOwnerId = assignUserId;
+    if (newOwnerId) {
+      // Ensure they have the 'owner' role
       const { error: roleErr } = await supabase
         .from("user_roles")
         .insert({ user_id: newOwnerId, role: "owner" });
-      // ignore unique violation
       if (roleErr && !roleErr.message.includes("duplicate")) {
         toast.error(roleErr.message);
       }
@@ -215,8 +201,9 @@ export default function AdminRestaurants() {
     else toast.success(newOwnerId ? "Dueño asignado" : "Dueño removido");
     setAssigning(false);
     setAssignFor(null);
-    setAssignEmail("");
+    setAssignUserId(null);
     load();
+    loadUsers();
   };
 
   return (

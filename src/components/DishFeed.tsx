@@ -125,7 +125,10 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
                   <Heart className={`w-6 h-6 transition-colors ${isLiked(dish.id) ? "text-red-500 fill-red-500" : "text-foreground"}`} />
                 </button>
                 <button
-                  onClick={() => addItem(dish)}
+                  onClick={() => {
+                    addItem(dish);
+                    trackEvent({ restaurantId: restaurant.id, eventType: "cart_add", dishId: dish.id });
+                  }}
                   className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity active:scale-95"
                 >
                   {items.some((i) => i.dish.id === dish.id) ? (

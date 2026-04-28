@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Heart, Star, Plus, Check } from "lucide-react";
+import { Heart, Star, Plus, Check, X } from "lucide-react";
 import type { Dish, RestaurantInfo } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
 import { useLikes } from "@/contexts/LikesContext";
+import { trackEvent } from "@/lib/analytics";
 
 interface DishFeedProps {
   dishes: Dish[];
@@ -16,18 +17,33 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
   const { addItem, items } = useCart();
   const { toggleLike, isLiked } = useLikes();
   const [heartAnimation, setHeartAnimation] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   const lastTapRef = useRef<Record<string, number>>({});
+  const trackedRef = useRef<Set<string>>(new Set());
 
-  const handleDoubleTap = useCallback((dishId: string) => {
+  const singleTapTimerRef = useRef<Record<string, ReturnType<typeof setTimeout> | null>>({});
+
+  const handleImageTap = useCallback((dish: Dish) => {
     const now = Date.now();
-    const last = lastTapRef.current[dishId] || 0;
+    const last = lastTapRef.current[dish.id] || 0;
     if (now - last < 300) {
-      if (!isLiked(dishId)) toggleLike(dishId);
-      setHeartAnimation(dishId);
+      // Double tap → like
+      if (!isLiked(dish.id)) toggleLike(dish.id);
+      setHeartAnimation(dish.id);
       setTimeout(() => setHeartAnimation(null), 800);
-      lastTapRef.current[dishId] = 0;
+      lastTapRef.current[dish.id] = 0;
+      const t = singleTapTimerRef.current[dish.id];
+      if (t) {
+        clearTimeout(t);
+        singleTapTimerRef.current[dish.id] = null;
+      }
     } else {
-      lastTapRef.current[dishId] = now;
+      lastTapRef.current[dish.id] = now;
+      // Delay single-tap action so double-tap can cancel it
+      singleTapTimerRef.current[dish.id] = setTimeout(() => {
+        setLightboxImage({ src: dish.image, alt: dish.name });
+        singleTapTimerRef.current[dish.id] = null;
+      }, 280);
     }
   }, [isLiked, toggleLike]);
 
@@ -40,10 +56,30 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    // Push a history entry so the browser back button closes the feed
+    // instead of navigating away from the menu.
+    window.history.pushState({ dishFeed: true }, "");
+    const handlePop = () => onClose();
+    window.addEventListener("popstate", handlePop);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("popstate", handlePop);
+      // If we're closing without popstate (user clicked button), pop our entry
+      if (window.history.state?.dishFeed) {
+        window.history.back();
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Track view per dish (once per session)
+  useEffect(() => {
+    const dish = dishes[startIndex];
+    if (dish && !trackedRef.current.has(dish.id)) {
+      trackedRef.current.add(dish.id);
+      trackEvent({ restaurantId: restaurant.id, eventType: "view", dishId: dish.id });
+    }
+  }, [startIndex, dishes, restaurant.id]);
 
   return (
     <div className="fixed inset-0 z-50 bg-background">
@@ -65,7 +101,7 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
             {/* Dish image */}
             <div
               className="aspect-square w-full relative select-none"
-              onClick={() => handleDoubleTap(dish.id)}
+              onClick={() => handleImageTap(dish)}
             >
               <img
                 src={dish.image}
@@ -89,7 +125,10 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
                   <Heart className={`w-6 h-6 transition-colors ${isLiked(dish.id) ? "text-red-500 fill-red-500" : "text-foreground"}`} />
                 </button>
                 <button
-                  onClick={() => addItem(dish)}
+                  onClick={() => {
+                    addItem(dish);
+                    trackEvent({ restaurantId: restaurant.id, eventType: "cart_add", dishId: dish.id });
+                  }}
                   className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity active:scale-95"
                 >
                   {items.some((i) => i.dish.id === dish.id) ? (
@@ -141,6 +180,31 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
           </div>
         ))}
       </div>
+
+      {/* Image lightbox */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center animate-fade-in"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxImage(null);
+            }}
+            className="absolute top-4 right-4 text-white/90 hover:text-white p-2"
+            aria-label="Cerrar imagen"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={lightboxImage.src}
+            alt={lightboxImage.alt}
+            className="max-w-[95vw] max-h-[90vh] object-contain animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

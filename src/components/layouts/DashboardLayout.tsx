@@ -2,13 +2,14 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Store, UtensilsCrossed, Tag } from "lucide-react";
+import { LogOut, Store, UtensilsCrossed, Tag, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/dashboard", label: "Información", icon: Store },
   { to: "/dashboard/categorias", label: "Categorías", icon: Tag },
   { to: "/dashboard/platillos", label: "Platillos", icon: UtensilsCrossed },
+  { to: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3 },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -27,7 +28,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Store className="h-5 w-5 text-primary" />
-            <h1 className="font-semibold">Mi Restaurante</h1>
+            <h1 className="font-semibold">Mi restaurante</h1>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:inline">{user?.email}</span>

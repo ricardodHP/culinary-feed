@@ -30,6 +30,8 @@ export interface RestaurantInfo {
   following: number;
   whatsappLink: string;
   instagramLink: string;
+  address?: string;
+  hours?: string;
   logo: string;
   cuisineTemplate: "generic" | "mexican" | "italian" | "chinese" | "japanese";
   showByRating: boolean;

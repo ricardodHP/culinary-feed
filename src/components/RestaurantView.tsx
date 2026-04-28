@@ -12,6 +12,7 @@ import AssistantFloatingButton from "@/components/AssistantFloatingButton";
 import AssistantModal from "@/components/AssistantModal";
 import type { Category, Dish, RestaurantInfo } from "@/data/restaurant";
 import { getTemplateStyles } from "@/lib/templates";
+import { trackEvent } from "@/lib/analytics";
 
 interface RestaurantViewProps {
   restaurant: RestaurantInfo;
@@ -58,6 +59,13 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
 
   const handleCategoryClick = (categoryId: string) => {
     setActiveCategory(activeCategory === categoryId ? null : categoryId);
+    if (categoryId !== "populares" && activeCategory !== categoryId) {
+      trackEvent({
+        restaurantId: restaurant.id,
+        eventType: "category_view",
+        categoryId,
+      });
+    }
   };
 
   const avgRating = useMemo(() => {

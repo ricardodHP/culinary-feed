@@ -52,6 +52,33 @@ export type Database = {
           },
         ]
       }
+      dish_events: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          dish_id: string | null
+          event_type: Database["public"]["Enums"]["dish_event_type"]
+          id: string
+          restaurant_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          dish_id?: string | null
+          event_type: Database["public"]["Enums"]["dish_event_type"]
+          id?: string
+          restaurant_id: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          dish_id?: string | null
+          event_type?: Database["public"]["Enums"]["dish_event_type"]
+          id?: string
+          restaurant_id?: string
+        }
+        Relationships: []
+      }
       dishes: {
         Row: {
           category_id: string | null
@@ -59,6 +86,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          is_active: boolean
           is_featured: boolean
           likes_count: number
           name: string
@@ -75,6 +103,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_active?: boolean
           is_featured?: boolean
           likes_count?: number
           name: string
@@ -91,6 +120,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_active?: boolean
           is_featured?: boolean
           likes_count?: number
           name?: string
@@ -252,6 +282,7 @@ export type Database = {
         | "chinese"
         | "japanese"
         | "generic"
+      dish_event_type: "view" | "cart_add" | "category_view"
       restaurant_status: "draft" | "published"
     }
     CompositeTypes: {
@@ -388,6 +419,7 @@ export const Constants = {
         "japanese",
         "generic",
       ],
+      dish_event_type: ["view", "cart_add", "category_view"],
       restaurant_status: ["draft", "published"],
     },
   },

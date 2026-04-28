@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +52,7 @@ interface DishRow {
   likes_count: number;
   tags: string[];
   is_featured: boolean;
+  is_active: boolean;
   category_id: string | null;
   position: number;
 }
@@ -63,6 +65,7 @@ interface DishForm {
   category_id: string | null;
   tags: string;
   is_featured: boolean;
+  is_active: boolean;
 }
 
 const emptyForm: DishForm = {
@@ -73,6 +76,7 @@ const emptyForm: DishForm = {
   category_id: null,
   tags: "",
   is_featured: false,
+  is_active: true,
 };
 
 export default function DashboardDishes() {
@@ -93,7 +97,7 @@ export default function DashboardDishes() {
     const [dRes, cRes] = await Promise.all([
       supabase
         .from("dishes")
-        .select("id, name, description, price, image_url, rating, likes_count, tags, is_featured, category_id, position")
+        .select("id, name, description, price, image_url, rating, likes_count, tags, is_featured, is_active, category_id, position")
         .eq("restaurant_id", restaurant.id)
         .order("position", { ascending: true }),
       supabase
@@ -130,6 +134,7 @@ export default function DashboardDishes() {
       category_id: d.category_id,
       tags: d.tags.join(", "),
       is_featured: d.is_featured,
+      is_active: d.is_active,
     });
     setOpen(true);
   };
@@ -157,6 +162,7 @@ export default function DashboardDishes() {
         .map((t) => t.trim())
         .filter(Boolean),
       is_featured: form.is_featured,
+      is_active: form.is_active,
     };
     if (editing) {
       const { error } = await supabase.from("dishes").update(payload).eq("id", editing.id);
@@ -193,6 +199,18 @@ export default function DashboardDishes() {
       .eq("id", d.id);
     if (error) toast.error(error.message);
     else load();
+  };
+
+  const toggleActive = async (d: DishRow) => {
+    const { error } = await supabase
+      .from("dishes")
+      .update({ is_active: !d.is_active })
+      .eq("id", d.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(d.is_active ? "Platillo deshabilitado" : "Platillo habilitado");
+      load();
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -284,7 +302,7 @@ export default function DashboardDishes() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((d) => (
-            <Card key={d.id} className="overflow-hidden">
+            <Card key={d.id} className={`overflow-hidden ${!d.is_active ? "opacity-60" : ""}`}>
               <div className="aspect-video bg-muted relative">
                 {d.image_url ? (
                   <img src={d.image_url} alt={d.name} className="w-full h-full object-cover" />
@@ -311,7 +329,7 @@ export default function DashboardDishes() {
                 {d.description && (
                   <p className="text-xs text-muted-foreground line-clamp-2">{d.description}</p>
                 )}
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                   <span className="inline-flex items-center gap-1">
                     <Star className="h-3 w-3" /> {d.rating.toFixed(1)}
                   </span>
@@ -319,6 +337,17 @@ export default function DashboardDishes() {
                     <Heart className="h-3 w-3" /> {d.likes_count}
                   </span>
                   {d.is_featured && <Badge variant="secondary">Destacado</Badge>}
+                  {!d.is_active && <Badge variant="outline">Deshabilitado</Badge>}
+                </div>
+                <div className="flex items-center justify-between rounded-md border px-2 py-1.5">
+                  <Label htmlFor={`active-${d.id}`} className="text-xs cursor-pointer">
+                    Visible en el menú
+                  </Label>
+                  <Switch
+                    id={`active-${d.id}`}
+                    checked={d.is_active}
+                    onCheckedChange={() => toggleActive(d)}
+                  />
                 </div>
                 {d.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
@@ -455,6 +484,18 @@ export default function DashboardDishes() {
               <Label htmlFor="dfeat" className="cursor-pointer">
                 Marcar como destacado
               </Label>
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label className="text-sm">Visible en el menú</Label>
+                <p className="text-xs text-muted-foreground">
+                  Si está apagado, los clientes no verán este platillo.
+                </p>
+              </div>
+              <Switch
+                checked={form.is_active}
+                onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+              />
             </div>
           </div>
           <DialogFooter>

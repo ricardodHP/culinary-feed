@@ -27,6 +27,7 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
       const overflow = el.scrollWidth > el.clientWidth + 4;
       setHasOverflow(overflow);
       setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+      setAtStart(el.scrollLeft <= 4);
     };
     update();
     el.addEventListener("scroll", update, { passive: true });

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { Category } from "@/data/restaurant";
 
 interface CategoryStoriesProps {
@@ -12,6 +12,7 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [atEnd, setAtEnd] = useState(false);
+  const [atStart, setAtStart] = useState(true);
 
   // virtual "populares" pseudo-category lives outside DB
   const all = [
@@ -26,6 +27,7 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
       const overflow = el.scrollWidth > el.clientWidth + 4;
       setHasOverflow(overflow);
       setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+      setAtStart(el.scrollLeft <= 4);
     };
     update();
     el.addEventListener("scroll", update, { passive: true });
@@ -38,7 +40,8 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
 
   if (categories.length === 0) return null;
 
-  const showHint = hasOverflow && !atEnd;
+  const showHintRight = hasOverflow && !atEnd;
+  const showHintLeft = hasOverflow && !atStart;
 
   return (
     <div className="px-2 py-3 border-b border-border relative">
@@ -75,8 +78,8 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
         ))}
       </div>
 
-      {/* Swipe hint */}
-      {showHint && (
+      {/* Swipe hint right */}
+      {showHintRight && (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute right-0 top-0 bottom-0 flex items-center pr-1"
@@ -84,6 +87,19 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
           <div className="h-full w-12 bg-gradient-to-l from-background via-background/80 to-transparent" />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-foreground/80 text-background rounded-full p-1 animate-pulse shadow-md">
             <ChevronRight className="h-3.5 w-3.5" />
+          </div>
+        </div>
+      )}
+
+      {/* Swipe hint left */}
+      {showHintLeft && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0 top-0 bottom-0 flex items-center pl-1"
+        >
+          <div className="h-full w-12 bg-gradient-to-r from-background via-background/80 to-transparent" />
+          <div className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-foreground/80 text-background rounded-full p-1 animate-pulse shadow-md">
+            <ChevronLeft className="h-3.5 w-3.5" />
           </div>
         </div>
       )}

@@ -127,13 +127,27 @@ export default function DashboardStats() {
       .slice(0, 5);
   }, [events, categories]);
 
-  const topRated = useMemo(
-    () => [...dishes].sort((a, b) => b.rating - a.rating).slice(0, 5),
-    [dishes],
+  const [ratingOrder, setRatingOrder] = useState<"top" | "bottom">("top");
+  const [likesOrder, setLikesOrder] = useState<"top" | "bottom">("top");
+
+  const ratedDishes = useMemo(
+    () =>
+      [...dishes].sort((a, b) =>
+        ratingOrder === "top" ? b.rating - a.rating : a.rating - b.rating,
+      ).slice(0, 5),
+    [dishes, ratingOrder],
   );
 
-  const topLiked = useMemo(
-    () => [...dishes].sort((a, b) => b.likes_count - a.likes_count).slice(0, 5),
+  const likedDishes = useMemo(
+    () =>
+      [...dishes].sort((a, b) =>
+        likesOrder === "top" ? b.likes_count - a.likes_count : a.likes_count - b.likes_count,
+      ).slice(0, 5),
+    [dishes, likesOrder],
+  );
+
+  const totalLikes = useMemo(
+    () => dishes.reduce((sum, d) => sum + (d.likes_count ?? 0), 0),
     [dishes],
   );
 
@@ -188,7 +202,7 @@ export default function DashboardStats() {
       ) : (
         <div className="space-y-6">
           {/* Totales */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard icon={<Eye className="h-4 w-4" />} label="Vistas a platillos" value={totals.views} />
             <StatCard
               icon={<ShoppingBag className="h-4 w-4" />}
@@ -199,6 +213,11 @@ export default function DashboardStats() {
               icon={<BarChart3 className="h-4 w-4" />}
               label="Vistas a categorías"
               value={totals.catViews}
+            />
+            <StatCard
+              icon={<Heart className="h-4 w-4" />}
+              label="Likes totales"
+              value={totalLikes}
             />
           </div>
 
@@ -225,16 +244,36 @@ export default function DashboardStats() {
               }))}
             />
             <ListCard
-              title="Mejor calificados"
+              title={ratingOrder === "top" ? "Mejor calificados" : "Peor calificados"}
               icon={<Star className="h-4 w-4" />}
               empty="Sin calificaciones"
-              items={topRated.map((d) => ({ name: d.name, value: d.rating.toFixed(1) }))}
+              items={ratedDishes.map((d) => ({ name: d.name, value: d.rating.toFixed(1) }))}
+              action={
+                <ToggleSegment<"top" | "bottom">
+                  value={ratingOrder}
+                  onChange={setRatingOrder}
+                  options={[
+                    { value: "top", label: "Mejor" },
+                    { value: "bottom", label: "Peor" },
+                  ]}
+                />
+              }
             />
             <ListCard
-              title="Con más likes"
+              title={likesOrder === "top" ? "Con más likes" : "Con menos likes"}
               icon={<Heart className="h-4 w-4" />}
               empty="Sin likes"
-              items={topLiked.map((d) => ({ name: d.name, value: `${d.likes_count}` }))}
+              items={likedDishes.map((d) => ({ name: d.name, value: `${d.likes_count}` }))}
+              action={
+                <ToggleSegment<"top" | "bottom">
+                  value={likesOrder}
+                  onChange={setLikesOrder}
+                  options={[
+                    { value: "top", label: "Más" },
+                    { value: "bottom", label: "Menos" },
+                  ]}
+                />
+              }
             />
           </div>
 
@@ -265,18 +304,23 @@ function ListCard({
   icon,
   items,
   empty,
+  action,
 }: {
   title: string;
   icon: React.ReactNode;
   items: { name: string; value: string }[];
   empty: string;
+  action?: React.ReactNode;
 }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          {icon} {title}
-        </CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            {icon} {title}
+          </CardTitle>
+          {action}
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
         {items.length === 0 ? (
@@ -298,5 +342,31 @@ function ListCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ToggleSegment<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+}) {
+  return (
+    <div className="flex gap-0.5 border rounded-md p-0.5">
+      {options.map((opt) => (
+        <Button
+          key={opt.value}
+          size="sm"
+          variant={value === opt.value ? "default" : "ghost"}
+          onClick={() => onChange(opt.value)}
+          className="h-6 px-2 text-[10px]"
+        >
+          {opt.label}
+        </Button>
+      ))}
+    </div>
   );
 }

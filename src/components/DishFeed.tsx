@@ -197,8 +197,16 @@ const DishFeed = ({ dishes, startIndex, restaurant, headerTitle, onClose, onRevi
       {/* Image lightbox */}
       {lightboxImage && (
         <div
-          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center animate-fade-in"
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center animate-fade-in overflow-hidden touch-none"
           onClick={() => setLightboxImage(null)}
+          onWheel={() => setLightboxImage(null)}
+          onTouchStart={(e) => {
+            (e.currentTarget as HTMLDivElement).dataset.startY = String(e.touches[0].clientY);
+          }}
+          onTouchMove={(e) => {
+            const startY = Number((e.currentTarget as HTMLDivElement).dataset.startY ?? 0);
+            if (Math.abs(e.touches[0].clientY - startY) > 40) setLightboxImage(null);
+          }}
         >
           <button
             onClick={(e) => {

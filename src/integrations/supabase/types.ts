@@ -294,6 +294,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_dish_likes: { Args: { _dish_id: string }; Returns: number }
       get_user_id_by_email: { Args: { _email: string }; Returns: string }
       has_role: {
         Args: {
@@ -302,6 +303,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_dish_likes: { Args: { _dish_id: string }; Returns: number }
       list_users_with_roles: {
         Args: never
         Returns: {

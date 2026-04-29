@@ -502,6 +502,18 @@ export default function DashboardDishes() {
                 onCheckedChange={(v) => setForm({ ...form, is_active: v })}
               />
             </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label className="text-sm">Mostrar calificación</Label>
+                <p className="text-xs text-muted-foreground">
+                  Si está apagado, se ocultan las estrellas y los clientes no podrán dejar reseñas de este platillo.
+                </p>
+              </div>
+              <Switch
+                checked={form.show_rating}
+                onCheckedChange={(v) => setForm({ ...form, show_rating: v })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>

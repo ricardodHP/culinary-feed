@@ -218,6 +218,17 @@ const DishFeed = ({ dishes, startIndex, restaurant, headerTitle, onClose, onRevi
           />
         </div>
       )}
+
+      {reviewsForDish && (
+        <ReviewsModal
+          open={!!reviewsForDish}
+          onClose={() => setReviewsForDish(null)}
+          title={`Reseñas de ${reviewsForDish.name}`}
+          restaurantId={restaurant.id}
+          dishId={reviewsForDish.id}
+          onSubmitted={onReviewSubmitted}
+        />
+      )}
     </div>
   );
 };

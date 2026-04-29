@@ -249,7 +249,7 @@ export default function DashboardStats() {
               empty="Sin calificaciones"
               items={ratedDishes.map((d) => ({ name: d.name, value: d.rating.toFixed(1) }))}
               action={
-                <ToggleSegment
+                <ToggleSegment<"top" | "bottom">
                   value={ratingOrder}
                   onChange={setRatingOrder}
                   options={[

@@ -304,18 +304,23 @@ function ListCard({
   icon,
   items,
   empty,
+  action,
 }: {
   title: string;
   icon: React.ReactNode;
   items: { name: string; value: string }[];
   empty: string;
+  action?: React.ReactNode;
 }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          {icon} {title}
-        </CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            {icon} {title}
+          </CardTitle>
+          {action}
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
         {items.length === 0 ? (
@@ -338,4 +343,31 @@ function ListCard({
       </CardContent>
     </Card>
   );
+}
+
+function ToggleSegment<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+}) {
+  return (
+    <div className="flex gap-0.5 border rounded-md p-0.5">
+      {options.map((opt) => (
+        <Button
+          key={opt.value}
+          size="sm"
+          variant={value === opt.value ? "default" : "ghost"}
+          onClick={() => onChange(opt.value)}
+          className="h-6 px-2 text-[10px]"
+        >
+          {opt.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
 }

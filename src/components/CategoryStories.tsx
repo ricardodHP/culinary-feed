@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { Category } from "@/data/restaurant";
 
 interface CategoryStoriesProps {

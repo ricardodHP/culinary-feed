@@ -370,4 +370,3 @@ function ToggleSegment<T extends string>({
     </div>
   );
 }
-}

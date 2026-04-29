@@ -10,11 +10,18 @@ const AssistantFloatingButton = ({ onClick }: Props) => {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const showTimer = setTimeout(() => {
       if (!dismissed) setShowTooltip(true);
     }, 3000);
-    return () => clearTimeout(timer);
+    return () => clearTimeout(showTimer);
   }, [dismissed]);
+
+  // Auto-hide tooltip 3s after it appears
+  useEffect(() => {
+    if (!showTooltip) return;
+    const hideTimer = setTimeout(() => setShowTooltip(false), 3000);
+    return () => clearTimeout(hideTimer);
+  }, [showTooltip]);
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();

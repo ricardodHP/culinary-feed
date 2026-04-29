@@ -44,6 +44,7 @@ export default function DashboardHome() {
     instagram_link: "",
     cuisine_template: "generic" as CuisineTemplate,
     show_by_rating: false,
+    show_rating: true,
     status: "draft" as RestaurantStatus,
     logo_url: "" as string | null,
   });
@@ -62,6 +63,7 @@ export default function DashboardHome() {
       instagram_link: restaurant.instagram_link ?? "",
       cuisine_template: restaurant.cuisine_template,
       show_by_rating: restaurant.show_by_rating,
+      show_rating: (restaurant as { show_rating?: boolean }).show_rating ?? true,
       status: restaurant.status,
       logo_url: restaurant.logo_url,
     });
@@ -82,6 +84,7 @@ export default function DashboardHome() {
         instagram_link: form.instagram_link || null,
         cuisine_template: form.cuisine_template,
         show_by_rating: form.show_by_rating,
+        show_rating: form.show_rating,
         status: form.status,
         logo_url: form.logo_url,
       })
@@ -294,6 +297,19 @@ export default function DashboardHome() {
                 onCheckedChange={(v) => setForm({ ...form, show_by_rating: v })}
               />
             </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border p-3">
+            <div>
+              <Label className="text-sm">Mostrar calificación del restaurante</Label>
+              <p className="text-xs text-muted-foreground">
+                Si está apagado, se ocultan las estrellas y los clientes no podrán dejar reseñas del restaurante.
+              </p>
+            </div>
+            <Switch
+              checked={form.show_rating}
+              onCheckedChange={(v) => setForm({ ...form, show_rating: v })}
+            />
           </div>
 
           <div className="text-xs text-muted-foreground">

@@ -12,6 +12,7 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [atEnd, setAtEnd] = useState(false);
+  const [atStart, setAtStart] = useState(true);
 
   // virtual "populares" pseudo-category lives outside DB
   const all = [

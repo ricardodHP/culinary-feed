@@ -265,7 +265,7 @@ export default function DashboardStats() {
               empty="Sin likes"
               items={likedDishes.map((d) => ({ name: d.name, value: `${d.likes_count}` }))}
               action={
-                <ToggleSegment
+                <ToggleSegment<"top" | "bottom">
                   value={likesOrder}
                   onChange={setLikesOrder}
                   options={[

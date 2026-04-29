@@ -53,6 +53,7 @@ interface DishRow {
   tags: string[];
   is_featured: boolean;
   is_active: boolean;
+  show_rating: boolean;
   category_id: string | null;
   position: number;
 }
@@ -66,6 +67,7 @@ interface DishForm {
   tags: string;
   is_featured: boolean;
   is_active: boolean;
+  show_rating: boolean;
 }
 
 const emptyForm: DishForm = {
@@ -77,6 +79,7 @@ const emptyForm: DishForm = {
   tags: "",
   is_featured: false,
   is_active: true,
+  show_rating: true,
 };
 
 export default function DashboardDishes() {
@@ -97,7 +100,7 @@ export default function DashboardDishes() {
     const [dRes, cRes] = await Promise.all([
       supabase
         .from("dishes")
-        .select("id, name, description, price, image_url, rating, likes_count, tags, is_featured, is_active, category_id, position")
+        .select("id, name, description, price, image_url, rating, likes_count, tags, is_featured, is_active, show_rating, category_id, position")
         .eq("restaurant_id", restaurant.id)
         .order("position", { ascending: true }),
       supabase
@@ -135,6 +138,7 @@ export default function DashboardDishes() {
       tags: d.tags.join(", "),
       is_featured: d.is_featured,
       is_active: d.is_active,
+      show_rating: d.show_rating,
     });
     setOpen(true);
   };
@@ -163,6 +167,7 @@ export default function DashboardDishes() {
         .filter(Boolean),
       is_featured: form.is_featured,
       is_active: form.is_active,
+      show_rating: form.show_rating,
     };
     if (editing) {
       const { error } = await supabase.from("dishes").update(payload).eq("id", editing.id);
@@ -495,6 +500,18 @@ export default function DashboardDishes() {
               <Switch
                 checked={form.is_active}
                 onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label className="text-sm">Mostrar calificación</Label>
+                <p className="text-xs text-muted-foreground">
+                  Si está apagado, se ocultan las estrellas y los clientes no podrán dejar reseñas de este platillo.
+                </p>
+              </div>
+              <Switch
+                checked={form.show_rating}
+                onCheckedChange={(v) => setForm({ ...form, show_rating: v })}
               />
             </div>
           </div>

@@ -94,6 +94,7 @@ export type Database = {
           price: number
           rating: number
           restaurant_id: string
+          show_rating: boolean
           tags: string[]
           updated_at: string
         }
@@ -111,6 +112,7 @@ export type Database = {
           price?: number
           rating?: number
           restaurant_id: string
+          show_rating?: boolean
           tags?: string[]
           updated_at?: string
         }
@@ -128,6 +130,7 @@ export type Database = {
           price?: number
           rating?: number
           restaurant_id?: string
+          show_rating?: boolean
           tags?: string[]
           updated_at?: string
         }
@@ -186,6 +189,7 @@ export type Database = {
           owner_id: string | null
           phone: string | null
           show_by_rating: boolean
+          show_rating: boolean
           slug: string
           status: Database["public"]["Enums"]["restaurant_status"]
           updated_at: string
@@ -204,6 +208,7 @@ export type Database = {
           owner_id?: string | null
           phone?: string | null
           show_by_rating?: boolean
+          show_rating?: boolean
           slug: string
           status?: Database["public"]["Enums"]["restaurant_status"]
           updated_at?: string
@@ -222,10 +227,44 @@ export type Database = {
           owner_id?: string | null
           phone?: string | null
           show_by_rating?: boolean
+          show_rating?: boolean
           slug?: string
           status?: Database["public"]["Enums"]["restaurant_status"]
           updated_at?: string
           whatsapp_link?: string | null
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          author_name: string | null
+          comment: string | null
+          created_at: string
+          dish_id: string | null
+          id: string
+          rating: number
+          restaurant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          author_name?: string | null
+          comment?: string | null
+          created_at?: string
+          dish_id?: string | null
+          id?: string
+          rating: number
+          restaurant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          author_name?: string | null
+          comment?: string | null
+          created_at?: string
+          dish_id?: string | null
+          id?: string
+          rating?: number
+          restaurant_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -273,6 +312,7 @@ export type Database = {
           roles: Database["public"]["Enums"]["app_role"][]
         }[]
       }
+      recalc_dish_rating: { Args: { _dish_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "owner" | "customer"

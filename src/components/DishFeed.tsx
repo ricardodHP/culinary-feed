@@ -4,15 +4,19 @@ import type { Dish, RestaurantInfo } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
 import { useLikes } from "@/contexts/LikesContext";
 import { trackEvent } from "@/lib/analytics";
+import ReviewsModal from "@/components/ReviewsModal";
 
 interface DishFeedProps {
   dishes: Dish[];
   startIndex: number;
   restaurant: RestaurantInfo;
+  /** What to show in the top header (defaults to restaurant slug). */
+  headerTitle?: string;
   onClose: () => void;
+  onReviewSubmitted?: () => void;
 }
 
-const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) => {
+const DishFeed = ({ dishes, startIndex, restaurant, headerTitle, onClose, onReviewSubmitted }: DishFeedProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addItem, items } = useCart();
   const { toggleLike, isLiked } = useLikes();
@@ -20,6 +24,7 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
   const lastTapRef = useRef<Record<string, number>>({});
   const trackedRef = useRef<Set<string>>(new Set());
+  const [reviewsForDish, setReviewsForDish] = useState<Dish | null>(null);
 
   const singleTapTimerRef = useRef<Record<string, ReturnType<typeof setTimeout> | null>>({});
 
@@ -85,11 +90,13 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
     <div className="fixed inset-0 z-50 bg-background">
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-background border-b border-border">
-        <div className="flex items-center gap-2">
-          <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
-          <span className="text-sm font-semibold text-foreground">{restaurant.username}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+          <span className="text-sm font-semibold text-foreground truncate">
+            {headerTitle ?? restaurant.username}
+          </span>
         </div>
-        <button onClick={onClose} className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80 transition-opacity">
+        <button onClick={onClose} className="flex items-center gap-1 text-sm font-medium text-primary hover:opacity-80 transition-opacity shrink-0">
           ← Volver al menú
         </button>
       </div>
@@ -142,10 +149,16 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
                   )}
                 </button>
               </div>
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-accent fill-accent" />
-                <span className="text-sm font-semibold text-foreground">{dish.rating}</span>
-              </div>
+              {dish.showRating && (
+                <button
+                  onClick={() => setReviewsForDish(dish)}
+                  className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                  aria-label="Ver y dejar reseñas"
+                >
+                  <Star className="w-4 h-4 text-accent fill-accent" />
+                  <span className="text-sm font-semibold text-foreground">{Number(dish.rating).toFixed(1)}</span>
+                </button>
+              )}
             </div>
 
             {/* Likes */}
@@ -204,6 +217,17 @@ const DishFeed = ({ dishes, startIndex, restaurant, onClose }: DishFeedProps) =>
             onClick={(e) => e.stopPropagation()}
           />
         </div>
+      )}
+
+      {reviewsForDish && (
+        <ReviewsModal
+          open={!!reviewsForDish}
+          onClose={() => setReviewsForDish(null)}
+          title={`Reseñas de ${reviewsForDish.name}`}
+          restaurantId={restaurant.id}
+          dishId={reviewsForDish.id}
+          onSubmitted={onReviewSubmitted}
+        />
       )}
     </div>
   );

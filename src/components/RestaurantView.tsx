@@ -1,4 +1,4 @@
-import { useState, useMemo, type CSSProperties } from "react";
+import { useState, useMemo, useCallback, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { Grid3X3, Star, Search, X, User } from "lucide-react";
 import { useAuth, getDefaultRouteForRoles } from "@/contexts/AuthContext";
@@ -10,6 +10,7 @@ import CartFloatingButton from "@/components/CartFloatingButton";
 import CartModal from "@/components/CartModal";
 import AssistantFloatingButton from "@/components/AssistantFloatingButton";
 import AssistantModal from "@/components/AssistantModal";
+import ReviewsModal from "@/components/ReviewsModal";
 import type { Category, Dish, RestaurantInfo } from "@/data/restaurant";
 import { getTemplateStyles } from "@/lib/templates";
 import { trackEvent } from "@/lib/analytics";
@@ -28,6 +29,8 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [restaurantReviewsOpen, setRestaurantReviewsOpen] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
   const { user, roles } = useAuth();
   const accountHref = user ? getDefaultRouteForRoles(roles) : "/login";
 
@@ -40,6 +43,7 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
   const filteredDishes = useMemo(() => {
     let result = dishes;
     if (searchQuery.trim()) {
+      // Search ignores category filter and looks in ALL dishes of the restaurant
       const q = searchQuery.toLowerCase();
       result = result.filter((d) => d.name.toLowerCase().includes(q));
     } else if (activeCategory === "populares") {
@@ -69,10 +73,22 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
   };
 
   const avgRating = useMemo(() => {
+    if (!restaurant.showRating) return null;
     if (dishes.length === 0) return null;
     const sum = dishes.reduce((s, d) => s + d.rating, 0);
     return (sum / dishes.length).toFixed(1);
-  }, [dishes]);
+  }, [dishes, restaurant.showRating, refreshTick]);
+
+  const activeCategoryName = useMemo(() => {
+    if (searchQuery.trim()) return `Resultados: "${searchQuery.trim()}"`;
+    if (!activeCategory) return null;
+    if (activeCategory === "populares") return "Populares";
+    return categories.find((c) => c.id === activeCategory)?.name ?? null;
+  }, [activeCategory, categories, searchQuery]);
+
+  const handleReviewSubmitted = useCallback(() => {
+    setRefreshTick((t) => t + 1);
+  }, []);
 
   return (
     <div className="max-w-lg mx-auto min-h-screen bg-background" style={rootStyle}>
@@ -96,10 +112,14 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
             <User className="w-5 h-5" />
           </Link>
           {avgRating && (
-            <div className="flex items-center gap-1 text-accent">
+            <button
+              onClick={() => setRestaurantReviewsOpen(true)}
+              className="flex items-center gap-1 text-accent hover:opacity-80 transition-opacity"
+              aria-label="Ver y dejar reseñas"
+            >
               <Star className="w-4 h-4 fill-accent" />
               <span className="text-sm font-semibold text-foreground">{avgRating}</span>
-            </div>
+            </button>
           )}
         </div>
       </div>
@@ -112,7 +132,7 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar platillo..."
+            placeholder="Buscar en todos los platillos..."
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
           {searchQuery && (
@@ -161,11 +181,16 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
 
       {/* Content */}
       {viewMode === "grid" ? (
-        <DishGrid dishes={filteredDishes} onDishClick={handleDishClick} />
+        <DishGrid
+          dishes={filteredDishes}
+          onDishClick={handleDishClick}
+          resetKey={`${activeCategory ?? "none"}|${searchQuery}|${viewMode}`}
+        />
       ) : (
         <DishGrid
           dishes={[...filteredDishes].sort((a, b) => b.rating - a.rating)}
           onDishClick={handleDishClick}
+          resetKey={`${activeCategory ?? "none"}|${searchQuery}|${viewMode}`}
         />
       )}
 
@@ -174,13 +199,24 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
           dishes={filteredDishes}
           startIndex={feedStartIndex}
           restaurant={restaurant}
+          headerTitle={activeCategoryName ?? restaurant.username}
           onClose={() => setFeedOpen(false)}
+          onReviewSubmitted={handleReviewSubmitted}
         />
       )}
       <AssistantFloatingButton onClick={() => setAssistantOpen(true)} />
       <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} dishes={dishes} />
       <CartFloatingButton />
       <CartModal />
+      {restaurant.showRating && (
+        <ReviewsModal
+          open={restaurantReviewsOpen}
+          onClose={() => setRestaurantReviewsOpen(false)}
+          title={`Reseñas de ${restaurant.name}`}
+          restaurantId={restaurant.id}
+          onSubmitted={handleReviewSubmitted}
+        />
+      )}
     </div>
   );
 };

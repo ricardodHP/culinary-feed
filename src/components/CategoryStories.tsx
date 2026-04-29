@@ -53,8 +53,8 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
             className="flex flex-col items-center gap-1 shrink-0"
           >
             <div
-              className={`rounded-full p-[3px] transition-all ${
-                activeCategory === cat.id ? "story-ring" : "bg-border"
+              className={`rounded-full transition-all ${
+                activeCategory === cat.id ? "story-ring-active" : "bg-border p-[3px]"
               }`}
             >
               <div className="rounded-full overflow-hidden bg-background p-[2px]">

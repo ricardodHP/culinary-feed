@@ -55,7 +55,7 @@ export function useRestaurantData(slug: string | undefined): UseRestaurantDataRe
           .order("position", { ascending: true }),
         supabase
           .from("dishes")
-          .select("id, name, description, price, image_url, rating, likes_count, tags, category_id, position, is_active")
+          .select("id, name, description, price, image_url, rating, likes_count, tags, category_id, position, is_active, show_rating")
           .eq("restaurant_id", r.id)
           .eq("is_active", true)
           .order("position", { ascending: true }),
@@ -79,6 +79,7 @@ export function useRestaurantData(slug: string | undefined): UseRestaurantDataRe
         rating: Number(d.rating),
         likes: d.likes_count,
         tags: d.tags ?? [],
+        showRating: (d as { show_rating?: boolean }).show_rating ?? true,
       }));
 
       const restaurant: RestaurantInfo = {
@@ -96,6 +97,7 @@ export function useRestaurantData(slug: string | undefined): UseRestaurantDataRe
         logo: r.logo_url ?? FALLBACK_LOGO,
         cuisineTemplate: r.cuisine_template,
         showByRating: r.show_by_rating,
+        showRating: (r as { show_rating?: boolean }).show_rating ?? true,
       };
 
       setState({ loading: false, notFound: false, restaurant, categories, dishes });

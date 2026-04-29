@@ -11,6 +11,7 @@ export interface Dish {
   rating: number;
   likes: number;
   tags: string[];
+  showRating: boolean;
 }
 
 export interface Category {
@@ -35,4 +36,5 @@ export interface RestaurantInfo {
   logo: string;
   cuisineTemplate: "generic" | "mexican" | "italian" | "chinese" | "japanese";
   showByRating: boolean;
+  showRating: boolean;
 }

@@ -78,8 +78,8 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
         ))}
       </div>
 
-      {/* Swipe hint */}
-      {showHint && (
+      {/* Swipe hint right */}
+      {showHintRight && (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute right-0 top-0 bottom-0 flex items-center pr-1"
@@ -87,6 +87,19 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
           <div className="h-full w-12 bg-gradient-to-l from-background via-background/80 to-transparent" />
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-foreground/80 text-background rounded-full p-1 animate-pulse shadow-md">
             <ChevronRight className="h-3.5 w-3.5" />
+          </div>
+        </div>
+      )}
+
+      {/* Swipe hint left */}
+      {showHintLeft && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0 top-0 bottom-0 flex items-center pl-1"
+        >
+          <div className="h-full w-12 bg-gradient-to-r from-background via-background/80 to-transparent" />
+          <div className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-foreground/80 text-background rounded-full p-1 animate-pulse shadow-md">
+            <ChevronLeft className="h-3.5 w-3.5" />
           </div>
         </div>
       )}

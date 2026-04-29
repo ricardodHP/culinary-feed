@@ -40,7 +40,8 @@ const CategoryStories = ({ categories, activeCategory, onCategoryClick }: Catego
 
   if (categories.length === 0) return null;
 
-  const showHint = hasOverflow && !atEnd;
+  const showHintRight = hasOverflow && !atEnd;
+  const showHintLeft = hasOverflow && !atStart;
 
   return (
     <div className="px-2 py-3 border-b border-border relative">

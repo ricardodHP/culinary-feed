@@ -127,13 +127,27 @@ export default function DashboardStats() {
       .slice(0, 5);
   }, [events, categories]);
 
-  const topRated = useMemo(
-    () => [...dishes].sort((a, b) => b.rating - a.rating).slice(0, 5),
-    [dishes],
+  const [ratingOrder, setRatingOrder] = useState<"top" | "bottom">("top");
+  const [likesOrder, setLikesOrder] = useState<"top" | "bottom">("top");
+
+  const ratedDishes = useMemo(
+    () =>
+      [...dishes].sort((a, b) =>
+        ratingOrder === "top" ? b.rating - a.rating : a.rating - b.rating,
+      ).slice(0, 5),
+    [dishes, ratingOrder],
   );
 
-  const topLiked = useMemo(
-    () => [...dishes].sort((a, b) => b.likes_count - a.likes_count).slice(0, 5),
+  const likedDishes = useMemo(
+    () =>
+      [...dishes].sort((a, b) =>
+        likesOrder === "top" ? b.likes_count - a.likes_count : a.likes_count - b.likes_count,
+      ).slice(0, 5),
+    [dishes, likesOrder],
+  );
+
+  const totalLikes = useMemo(
+    () => dishes.reduce((sum, d) => sum + (d.likes_count ?? 0), 0),
     [dishes],
   );
 

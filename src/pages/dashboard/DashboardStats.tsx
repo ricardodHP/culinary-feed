@@ -202,7 +202,7 @@ export default function DashboardStats() {
       ) : (
         <div className="space-y-6">
           {/* Totales */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard icon={<Eye className="h-4 w-4" />} label="Vistas a platillos" value={totals.views} />
             <StatCard
               icon={<ShoppingBag className="h-4 w-4" />}
@@ -213,6 +213,11 @@ export default function DashboardStats() {
               icon={<BarChart3 className="h-4 w-4" />}
               label="Vistas a categorías"
               value={totals.catViews}
+            />
+            <StatCard
+              icon={<Heart className="h-4 w-4" />}
+              label="Likes totales"
+              value={totalLikes}
             />
           </div>
 
@@ -239,16 +244,36 @@ export default function DashboardStats() {
               }))}
             />
             <ListCard
-              title="Mejor calificados"
+              title={ratingOrder === "top" ? "Mejor calificados" : "Peor calificados"}
               icon={<Star className="h-4 w-4" />}
               empty="Sin calificaciones"
-              items={topRated.map((d) => ({ name: d.name, value: d.rating.toFixed(1) }))}
+              items={ratedDishes.map((d) => ({ name: d.name, value: d.rating.toFixed(1) }))}
+              action={
+                <ToggleSegment
+                  value={ratingOrder}
+                  onChange={setRatingOrder}
+                  options={[
+                    { value: "top", label: "Mejor" },
+                    { value: "bottom", label: "Peor" },
+                  ]}
+                />
+              }
             />
             <ListCard
-              title="Con más likes"
+              title={likesOrder === "top" ? "Con más likes" : "Con menos likes"}
               icon={<Heart className="h-4 w-4" />}
               empty="Sin likes"
-              items={topLiked.map((d) => ({ name: d.name, value: `${d.likes_count}` }))}
+              items={likedDishes.map((d) => ({ name: d.name, value: `${d.likes_count}` }))}
+              action={
+                <ToggleSegment
+                  value={likesOrder}
+                  onChange={setLikesOrder}
+                  options={[
+                    { value: "top", label: "Más" },
+                    { value: "bottom", label: "Menos" },
+                  ]}
+                />
+              }
             />
           </div>
 

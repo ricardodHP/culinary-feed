@@ -162,7 +162,7 @@ export default function DashboardHome() {
             Edita los datos generales que verán tus clientes
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge variant={form.status === "published" ? "default" : "secondary"}>
             {form.status === "published" ? "Publicado" : "Borrador"}
           </Badge>
@@ -172,7 +172,7 @@ export default function DashboardHome() {
             </Link>
           </Button>
           <Button variant="outline" size="sm" onClick={() => setQrOpen(true)}>
-            <QrCode className="h-4 w-4" /> QR
+            <QrCode className="h-4 w-4" /> Compartir QR
           </Button>
           <Button size="sm" onClick={togglePublished}>
             {form.status === "published" ? "Despublicar" : "Publicar"}

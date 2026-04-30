@@ -124,7 +124,9 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
     };
   }, [open, url, size, margin, darkColor, lightColor, includeLogo, logoUrl]);
 
-  const fileName = `menu-${restaurantName.toLowerCase().replace(/\s+/g, "-")}.png`;
+  const baseFileName = `menu-${restaurantName.toLowerCase().replace(/\s+/g, "-")}`;
+  const fileName = `${baseFileName}.png`;
+  const pdfFileName = `${baseFileName}.pdf`;
 
   const handleDownload = () => {
     if (!dataUrl) return;
@@ -132,6 +134,51 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
     a.href = dataUrl;
     a.download = fileName;
     a.click();
+  };
+
+  const handleDownloadPdf = () => {
+    if (!dataUrl) return;
+    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    // Title — restaurant name
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.text(restaurantName, pageW / 2, 35, { align: "center" });
+
+    // Short tagline
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(14);
+    doc.setTextColor(90);
+    doc.text("Escanea para ver nuestro menú", pageW / 2, 48, { align: "center" });
+    doc.setTextColor(0);
+
+    // QR image (centered)
+    const qrSizeMm = 110;
+    const qrX = (pageW - qrSizeMm) / 2;
+    const qrY = 60;
+    doc.addImage(dataUrl, "PNG", qrX, qrY, qrSizeMm, qrSizeMm);
+
+    // Instructions
+    const instructionsY = qrY + qrSizeMm + 18;
+    doc.setFontSize(12);
+    doc.setTextColor(60);
+    const lines = [
+      "1. Abre la cámara de tu celular",
+      "2. Apunta al código QR",
+      "3. Toca el enlace para ver el menú",
+    ];
+    lines.forEach((line, i) => {
+      doc.text(line, pageW / 2, instructionsY + i * 7, { align: "center" });
+    });
+
+    // URL footer
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(url, pageW / 2, pageH - 18, { align: "center" });
+
+    doc.save(pdfFileName);
   };
 
   const handleShare = async () => {

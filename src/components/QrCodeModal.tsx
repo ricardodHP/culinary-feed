@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,18 +13,14 @@ interface QrCodeModalProps {
 }
 
 export default function QrCodeModal({ open, onOpenChange, url, restaurantName }: QrCodeModalProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dataUrl, setDataUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!open || !canvasRef.current) return;
-    QRCode.toCanvas(canvasRef.current, url, {
-      width: 320,
-      margin: 2,
-      color: { dark: "#000000", light: "#ffffff" },
-    }).catch(() => toast.error("No se pudo generar el QR"));
-    QRCode.toDataURL(url, { width: 1024, margin: 2 }).then(setDataUrl).catch(() => undefined);
+    if (!open) return;
+    QRCode.toDataURL(url, { width: 1024, margin: 2, color: { dark: "#000000", light: "#ffffff" } })
+      .then(setDataUrl)
+      .catch(() => toast.error("No se pudo generar el QR"));
   }, [open, url]);
 
   const fileName = `menu-${restaurantName.toLowerCase().replace(/\s+/g, "-")}.png`;
@@ -69,7 +65,7 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Código QR de tu menú</DialogTitle>
           <DialogDescription>
@@ -77,19 +73,23 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName }:
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col items-center gap-4 py-2">
+        <div className="flex flex-col items-center gap-4 py-2 min-w-0">
           <div className="rounded-lg bg-white p-3 border">
-            <canvas ref={canvasRef} />
+            {dataUrl ? (
+              <img src={dataUrl} alt="QR del menú" className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px]" />
+            ) : (
+              <div className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] animate-pulse bg-muted" />
+            )}
           </div>
 
-          <div className="w-full flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
-            <span className="text-xs text-muted-foreground truncate flex-1">{url}</span>
-            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleCopy}>
+          <div className="w-full flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 min-w-0">
+            <span className="text-xs text-muted-foreground truncate flex-1 min-w-0">{url}</span>
+            <Button size="sm" variant="ghost" className="h-7 px-2 shrink-0" onClick={handleCopy}>
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
             </Button>
           </div>
 
-          <div className="flex w-full gap-2">
+          <div className="flex w-full gap-2 flex-col sm:flex-row">
             <Button onClick={handleDownload} className="flex-1" disabled={!dataUrl}>
               <Download className="h-4 w-4" />
               Descargar

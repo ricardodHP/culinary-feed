@@ -133,10 +133,15 @@ const DishFeed = ({ dishes, startIndex, restaurant, headerTitle, onClose, onRevi
                 </button>
                 <button
                   onClick={() => setReviewsForDish(dish)}
-                  className="active:scale-125 transition-transform"
+                  className="relative active:scale-125 transition-transform"
                   aria-label="Ver comentarios"
                 >
                   <MessageCircle className="w-6 h-6 text-foreground" />
+                  {(dish.reviewsCount ?? 0) > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center">
+                      {dish.reviewsCount}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => {

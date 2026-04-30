@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Heart, Star, Plus, Check, X } from "lucide-react";
+import { Heart, Star, Plus, Check, X, MessageCircle } from "lucide-react";
 import type { Dish, RestaurantInfo } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
 import { useLikes } from "@/contexts/LikesContext";
@@ -128,8 +128,15 @@ const DishFeed = ({ dishes, startIndex, restaurant, headerTitle, onClose, onRevi
             {/* Action bar */}
             <div className="flex items-center justify-between px-4 py-2">
               <div className="flex items-center gap-4">
-                <button onClick={() => toggleLike(dish.id)} className="active:scale-125 transition-transform">
+                <button onClick={() => toggleLike(dish.id)} className="active:scale-125 transition-transform" aria-label="Me gusta">
                   <Heart className={`w-6 h-6 transition-colors ${isLiked(dish.id) ? "text-red-500 fill-red-500" : "text-foreground"}`} />
+                </button>
+                <button
+                  onClick={() => setReviewsForDish(dish)}
+                  className="active:scale-125 transition-transform"
+                  aria-label="Ver comentarios"
+                >
+                  <MessageCircle className="w-6 h-6 text-foreground" />
                 </button>
                 <button
                   onClick={() => {

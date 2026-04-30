@@ -85,6 +85,10 @@ export default function DashboardStats() {
     return { views, cartAdds, catViews };
   }, [events]);
 
+  const [viewedOrder, setViewedOrder] = useState<"top" | "bottom">("top");
+  const [cartOrder, setCartOrder] = useState<"top" | "bottom">("top");
+  const [catOrder, setCatOrder] = useState<"top" | "bottom">("top");
+
   const topViewed = useMemo(() => {
     const counts = new Map<string, number>();
     for (const e of events) {
@@ -95,9 +99,9 @@ export default function DashboardStats() {
     return [...counts.entries()]
       .map(([id, count]) => ({ id, count, dish: dishes.find((d) => d.id === id) }))
       .filter((x) => x.dish)
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => (viewedOrder === "top" ? b.count - a.count : a.count - b.count))
       .slice(0, 5);
-  }, [events, dishes]);
+  }, [events, dishes, viewedOrder]);
 
   const topCart = useMemo(() => {
     const counts = new Map<string, number>();
@@ -109,9 +113,9 @@ export default function DashboardStats() {
     return [...counts.entries()]
       .map(([id, count]) => ({ id, count, dish: dishes.find((d) => d.id === id) }))
       .filter((x) => x.dish)
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => (cartOrder === "top" ? b.count - a.count : a.count - b.count))
       .slice(0, 5);
-  }, [events, dishes]);
+  }, [events, dishes, cartOrder]);
 
   const topCategories = useMemo(() => {
     const counts = new Map<string, number>();
@@ -123,9 +127,9 @@ export default function DashboardStats() {
     return [...counts.entries()]
       .map(([id, count]) => ({ id, count, cat: categories.find((c) => c.id === id) }))
       .filter((x) => x.cat)
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => (catOrder === "top" ? b.count - a.count : a.count - b.count))
       .slice(0, 5);
-  }, [events, categories]);
+  }, [events, categories, catOrder]);
 
   const [ratingOrder, setRatingOrder] = useState<"top" | "bottom">("top");
   const [likesOrder, setLikesOrder] = useState<"top" | "bottom">("top");
@@ -223,25 +227,55 @@ export default function DashboardStats() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <ListCard
-              title="Platillos más visitados"
+              title={viewedOrder === "top" ? "Platillos más visitados" : "Platillos menos visitados"}
               icon={<Eye className="h-4 w-4" />}
               empty="Sin vistas en este período"
               items={topViewed.map((x) => ({ name: x.dish!.name, value: `${x.count}` }))}
+              action={
+                <ToggleSegment<"top" | "bottom">
+                  value={viewedOrder}
+                  onChange={setViewedOrder}
+                  options={[
+                    { value: "top", label: "Más" },
+                    { value: "bottom", label: "Menos" },
+                  ]}
+                />
+              }
             />
             <ListCard
-              title="Más agregados al carrito"
+              title={cartOrder === "top" ? "Más agregados al carrito" : "Menos agregados al carrito"}
               icon={<ShoppingBag className="h-4 w-4" />}
               empty="Sin agregados en este período"
               items={topCart.map((x) => ({ name: x.dish!.name, value: `${x.count}` }))}
+              action={
+                <ToggleSegment<"top" | "bottom">
+                  value={cartOrder}
+                  onChange={setCartOrder}
+                  options={[
+                    { value: "top", label: "Más" },
+                    { value: "bottom", label: "Menos" },
+                  ]}
+                />
+              }
             />
             <ListCard
-              title="Categorías más visitadas"
+              title={catOrder === "top" ? "Categorías más visitadas" : "Categorías menos visitadas"}
               icon={<BarChart3 className="h-4 w-4" />}
               empty="Sin vistas a categorías"
               items={topCategories.map((x) => ({
                 name: `${x.cat!.emoji ?? "🍽️"} ${x.cat!.name}`,
                 value: `${x.count}`,
               }))}
+              action={
+                <ToggleSegment<"top" | "bottom">
+                  value={catOrder}
+                  onChange={setCatOrder}
+                  options={[
+                    { value: "top", label: "Más" },
+                    { value: "bottom", label: "Menos" },
+                  ]}
+                />
+              }
             />
             <ListCard
               title={ratingOrder === "top" ? "Mejor calificados" : "Peor calificados"}

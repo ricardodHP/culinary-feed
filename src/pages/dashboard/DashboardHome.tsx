@@ -17,9 +17,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useManagedRestaurant } from "@/hooks/useManagedRestaurant";
 import { toast } from "sonner";
-import { ExternalLink, Upload, Eye } from "lucide-react";
+import { ExternalLink, Upload, Eye, QrCode } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Database } from "@/integrations/supabase/types";
+import QrCodeModal from "@/components/QrCodeModal";
 
 type CuisineTemplate = Database["public"]["Enums"]["cuisine_template"];
 type RestaurantStatus = Database["public"]["Enums"]["restaurant_status"];
@@ -50,6 +51,7 @@ export default function DashboardHome() {
   });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   useEffect(() => {
     if (!restaurant) return;
@@ -168,6 +170,9 @@ export default function DashboardHome() {
             <Link to={`/r/${restaurant.slug}`} target="_blank">
               <Eye className="h-4 w-4" /> Preview
             </Link>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setQrOpen(true)}>
+            <QrCode className="h-4 w-4" /> QR
           </Button>
           <Button size="sm" onClick={togglePublished}>
             {form.status === "published" ? "Despublicar" : "Publicar"}
@@ -326,6 +331,13 @@ export default function DashboardHome() {
           </div>
         </CardContent>
       </Card>
+
+      <QrCodeModal
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        url={`${window.location.origin}/r/${restaurant.slug}`}
+        restaurantName={restaurant.name}
+      />
     </DashboardLayout>
   );
 }

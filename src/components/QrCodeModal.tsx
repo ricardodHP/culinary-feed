@@ -315,12 +315,16 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
             )}
           </div>
 
-          <div className="flex w-full gap-2 flex-col sm:flex-row">
-            <Button onClick={handleDownload} className="flex-1" disabled={!dataUrl || generating}>
+          <div className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2">
+            <Button onClick={handleDownload} className="w-full" disabled={!dataUrl || generating}>
               <Download className="h-4 w-4" />
-              Descargar
+              PNG
             </Button>
-            <Button onClick={handleShare} variant="secondary" className="flex-1" disabled={!dataUrl || generating}>
+            <Button onClick={handleDownloadPdf} variant="outline" className="w-full" disabled={!dataUrl || generating}>
+              <FileText className="h-4 w-4" />
+              PDF
+            </Button>
+            <Button onClick={handleShare} variant="secondary" className="w-full" disabled={!dataUrl || generating}>
               <Share2 className="h-4 w-4" />
               Compartir
             </Button>

@@ -12,6 +12,7 @@ export interface Dish {
   likes: number;
   tags: string[];
   showRating: boolean;
+  reviewsCount?: number;
 }
 
 export interface Category {

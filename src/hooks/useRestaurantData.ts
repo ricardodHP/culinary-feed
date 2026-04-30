@@ -62,6 +62,18 @@ export function useRestaurantData(slug: string | undefined): UseRestaurantDataRe
       ]);
       if (cancelled) return;
 
+      // Load review counts per dish (single query, then aggregate client-side)
+      const reviewCounts: Record<string, number> = {};
+      const { data: revRows } = await supabase
+        .from("reviews")
+        .select("dish_id")
+        .eq("restaurant_id", r.id)
+        .not("dish_id", "is", null);
+      (revRows ?? []).forEach((row) => {
+        const id = (row as { dish_id: string | null }).dish_id;
+        if (id) reviewCounts[id] = (reviewCounts[id] ?? 0) + 1;
+      });
+
       const categories: Category[] = (cRes.data ?? []).map((c) => ({
         id: c.id,
         name: c.name,
@@ -80,6 +92,7 @@ export function useRestaurantData(slug: string | undefined): UseRestaurantDataRe
         likes: d.likes_count,
         tags: d.tags ?? [],
         showRating: (d as { show_rating?: boolean }).show_rating ?? true,
+        reviewsCount: reviewCounts[d.id] ?? 0,
       }));
 
       const restaurant: RestaurantInfo = {

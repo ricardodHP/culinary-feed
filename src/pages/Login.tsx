@@ -17,12 +17,21 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Redirect if already logged in
+  // Redirect if already logged in. Wait until roles are loaded so owners
+  // land on /dashboard instead of being redirected to "/" when roles
+  // haven't arrived yet.
   useEffect(() => {
-    if (!authLoading && user) {
-      const from = (location.state as { from?: string } | null)?.from;
-      navigate(from && from !== "/login" ? from : getDefaultRouteForRoles(roles), { replace: true });
+    if (authLoading || !user) return;
+    // If user exists but roles are still being fetched, wait one more tick.
+    if (roles.length === 0) {
+      const t = setTimeout(() => {
+        const from = (location.state as { from?: string } | null)?.from;
+        navigate(from && from !== "/login" ? from : getDefaultRouteForRoles(roles), { replace: true });
+      }, 400);
+      return () => clearTimeout(t);
     }
+    const from = (location.state as { from?: string } | null)?.from;
+    navigate(from && from !== "/login" ? from : getDefaultRouteForRoles(roles), { replace: true });
   }, [user, roles, authLoading, navigate, location.state]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {

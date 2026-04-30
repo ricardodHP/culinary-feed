@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import jsPDF from "jspdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Download, Share2, Copy, Check } from "lucide-react";
+import { Download, Share2, Copy, Check, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 interface QrCodeModalProps {

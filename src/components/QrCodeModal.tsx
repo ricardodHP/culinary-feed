@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Download, Share2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,18 +13,115 @@ interface QrCodeModalProps {
   onOpenChange: (open: boolean) => void;
   url: string;
   restaurantName: string;
+  logoUrl?: string | null;
 }
 
-export default function QrCodeModal({ open, onOpenChange, url, restaurantName }: QrCodeModalProps) {
+const PRESET_COLORS = ["#000000", "#0F172A", "#7C2D12", "#065F46", "#1E3A8A", "#7E22CE"];
+
+async function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+export default function QrCodeModal({ open, onOpenChange, url, restaurantName, logoUrl }: QrCodeModalProps) {
   const [dataUrl, setDataUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  // Customization
+  const [size, setSize] = useState(512);
+  const [margin, setMargin] = useState(2);
+  const [darkColor, setDarkColor] = useState("#000000");
+  const [lightColor, setLightColor] = useState("#FFFFFF");
+  const [includeLogo, setIncludeLogo] = useState(true);
 
   useEffect(() => {
     if (!open) return;
-    QRCode.toDataURL(url, { width: 1024, margin: 2, color: { dark: "#000000", light: "#ffffff" } })
-      .then(setDataUrl)
-      .catch(() => toast.error("No se pudo generar el QR"));
-  }, [open, url]);
+    let cancelled = false;
+    setGenerating(true);
+
+    (async () => {
+      try {
+        const useLogo = includeLogo && !!logoUrl;
+        const png = await QRCode.toDataURL(url, {
+          width: size,
+          margin,
+          errorCorrectionLevel: useLogo ? "H" : "M",
+          color: { dark: darkColor, light: lightColor },
+        });
+
+        if (!useLogo) {
+          if (!cancelled) setDataUrl(png);
+          return;
+        }
+
+        // Composite logo in the center
+        const qrImg = await loadImage(png);
+        const canvas = document.createElement("canvas");
+        canvas.width = qrImg.width;
+        canvas.height = qrImg.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("no ctx");
+        ctx.drawImage(qrImg, 0, 0);
+
+        try {
+          const logo = await loadImage(logoUrl as string);
+          const logoSize = Math.round(qrImg.width * 0.22);
+          const cx = (qrImg.width - logoSize) / 2;
+          const cy = (qrImg.height - logoSize) / 2;
+          const pad = Math.round(logoSize * 0.1);
+
+          // White rounded background behind logo
+          const r = Math.round(logoSize * 0.18);
+          ctx.fillStyle = lightColor;
+          const x = cx - pad;
+          const y = cy - pad;
+          const w = logoSize + pad * 2;
+          const h = logoSize + pad * 2;
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.arcTo(x + w, y, x + w, y + h, r);
+          ctx.arcTo(x + w, y + h, x, y + h, r);
+          ctx.arcTo(x, y + h, x, y, r);
+          ctx.arcTo(x, y, x + w, y, r);
+          ctx.closePath();
+          ctx.fill();
+
+          // Clip logo into rounded square
+          ctx.save();
+          ctx.beginPath();
+          const lr = Math.round(logoSize * 0.15);
+          ctx.moveTo(cx + lr, cy);
+          ctx.arcTo(cx + logoSize, cy, cx + logoSize, cy + logoSize, lr);
+          ctx.arcTo(cx + logoSize, cy + logoSize, cx, cy + logoSize, lr);
+          ctx.arcTo(cx, cy + logoSize, cx, cy, lr);
+          ctx.arcTo(cx, cy, cx + logoSize, cy, lr);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(logo, cx, cy, logoSize, logoSize);
+          ctx.restore();
+        } catch {
+          // logo failed (CORS, etc.) — fall back to plain QR
+          toast.message("No se pudo cargar el logo, se generó el QR sin él");
+        }
+
+        if (!cancelled) setDataUrl(canvas.toDataURL("image/png"));
+      } catch {
+        if (!cancelled) toast.error("No se pudo generar el QR");
+      } finally {
+        if (!cancelled) setGenerating(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, url, size, margin, darkColor, lightColor, includeLogo, logoUrl]);
 
   const fileName = `menu-${restaurantName.toLowerCase().replace(/\s+/g, "-")}.png`;
 
@@ -65,18 +165,22 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Código QR de tu menú</DialogTitle>
           <DialogDescription>
-            Comparte o imprime este QR para que tus clientes vean tu menú al escanearlo.
+            Personaliza, descarga o comparte el QR para que tus clientes vean tu menú al escanearlo.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 py-2 min-w-0">
-          <div className="rounded-lg bg-white p-3 border">
+          <div className="rounded-lg p-3 border" style={{ backgroundColor: lightColor }}>
             {dataUrl ? (
-              <img src={dataUrl} alt="QR del menú" className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px]" />
+              <img
+                src={dataUrl}
+                alt="QR del menú"
+                className={`w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] transition-opacity ${generating ? "opacity-60" : "opacity-100"}`}
+              />
             ) : (
               <div className="w-[220px] h-[220px] sm:w-[260px] sm:h-[260px] animate-pulse bg-muted" />
             )}
@@ -89,12 +193,86 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName }:
             </Button>
           </div>
 
+          {/* Customization */}
+          <div className="w-full space-y-4 rounded-md border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <Label className="text-xs">Tamaño</Label>
+              <span className="text-xs text-muted-foreground">{size}px</span>
+            </div>
+            <Slider
+              min={256}
+              max={1024}
+              step={32}
+              value={[size]}
+              onValueChange={(v) => setSize(v[0])}
+            />
+
+            <div className="flex items-center justify-between gap-3">
+              <Label className="text-xs">Margen</Label>
+              <span className="text-xs text-muted-foreground">{margin}</span>
+            </div>
+            <Slider
+              min={0}
+              max={8}
+              step={1}
+              value={[margin]}
+              onValueChange={(v) => setMargin(v[0])}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs mb-1.5 block">Color</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={darkColor}
+                    onChange={(e) => setDarkColor(e.target.value)}
+                    className="h-8 w-10 rounded border bg-transparent cursor-pointer"
+                    aria-label="Color del QR"
+                  />
+                  <div className="flex flex-wrap gap-1">
+                    {PRESET_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setDarkColor(c)}
+                        className="h-5 w-5 rounded-full border"
+                        style={{ backgroundColor: c }}
+                        aria-label={`Color ${c}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs mb-1.5 block">Fondo</Label>
+                <input
+                  type="color"
+                  value={lightColor}
+                  onChange={(e) => setLightColor(e.target.value)}
+                  className="h-8 w-10 rounded border bg-transparent cursor-pointer"
+                  aria-label="Color de fondo"
+                />
+              </div>
+            </div>
+
+            {logoUrl && (
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <div>
+                  <Label className="text-xs">Logo al centro</Label>
+                  <p className="text-[11px] text-muted-foreground">Usa el logo del restaurante.</p>
+                </div>
+                <Switch checked={includeLogo} onCheckedChange={setIncludeLogo} />
+              </div>
+            )}
+          </div>
+
           <div className="flex w-full gap-2 flex-col sm:flex-row">
-            <Button onClick={handleDownload} className="flex-1" disabled={!dataUrl}>
+            <Button onClick={handleDownload} className="flex-1" disabled={!dataUrl || generating}>
               <Download className="h-4 w-4" />
               Descargar
             </Button>
-            <Button onClick={handleShare} variant="secondary" className="flex-1">
+            <Button onClick={handleShare} variant="secondary" className="flex-1" disabled={!dataUrl || generating}>
               <Share2 className="h-4 w-4" />
               Compartir
             </Button>

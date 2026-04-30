@@ -337,6 +337,7 @@ export default function DashboardHome() {
         onOpenChange={setQrOpen}
         url={`${window.location.origin}/r/${restaurant.slug}`}
         restaurantName={restaurant.name}
+        logoUrl={form.logo_url}
       />
     </DashboardLayout>
   );

@@ -204,7 +204,7 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
           onReviewSubmitted={handleReviewSubmitted}
         />
       )}
-      <AssistantFloatingButton onClick={() => setAssistantOpen(true)} />
+      <AssistantFloatingButton onClick={() => setAssistantOpen(true)} used={assistantOpen} />
       <AssistantModal open={assistantOpen} onClose={() => setAssistantOpen(false)} dishes={dishes} />
       <CartFloatingButton />
       <CartModal />

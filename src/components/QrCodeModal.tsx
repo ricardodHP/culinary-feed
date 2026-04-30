@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import jsPDF from "jspdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Download, Share2, Copy, Check } from "lucide-react";
+import { Download, Share2, Copy, Check, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 interface QrCodeModalProps {
@@ -123,7 +124,9 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
     };
   }, [open, url, size, margin, darkColor, lightColor, includeLogo, logoUrl]);
 
-  const fileName = `menu-${restaurantName.toLowerCase().replace(/\s+/g, "-")}.png`;
+  const baseFileName = `menu-${restaurantName.toLowerCase().replace(/\s+/g, "-")}`;
+  const fileName = `${baseFileName}.png`;
+  const pdfFileName = `${baseFileName}.pdf`;
 
   const handleDownload = () => {
     if (!dataUrl) return;
@@ -131,6 +134,51 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
     a.href = dataUrl;
     a.download = fileName;
     a.click();
+  };
+
+  const handleDownloadPdf = () => {
+    if (!dataUrl) return;
+    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    // Title — restaurant name
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.text(restaurantName, pageW / 2, 35, { align: "center" });
+
+    // Short tagline
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(14);
+    doc.setTextColor(90);
+    doc.text("Escanea para ver nuestro menú", pageW / 2, 48, { align: "center" });
+    doc.setTextColor(0);
+
+    // QR image (centered)
+    const qrSizeMm = 110;
+    const qrX = (pageW - qrSizeMm) / 2;
+    const qrY = 60;
+    doc.addImage(dataUrl, "PNG", qrX, qrY, qrSizeMm, qrSizeMm);
+
+    // Instructions
+    const instructionsY = qrY + qrSizeMm + 18;
+    doc.setFontSize(12);
+    doc.setTextColor(60);
+    const lines = [
+      "1. Abre la cámara de tu celular",
+      "2. Apunta al código QR",
+      "3. Toca el enlace para ver el menú",
+    ];
+    lines.forEach((line, i) => {
+      doc.text(line, pageW / 2, instructionsY + i * 7, { align: "center" });
+    });
+
+    // URL footer
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(url, pageW / 2, pageH - 18, { align: "center" });
+
+    doc.save(pdfFileName);
   };
 
   const handleShare = async () => {
@@ -267,12 +315,16 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
             )}
           </div>
 
-          <div className="flex w-full gap-2 flex-col sm:flex-row">
-            <Button onClick={handleDownload} className="flex-1" disabled={!dataUrl || generating}>
+          <div className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2">
+            <Button onClick={handleDownload} className="w-full" disabled={!dataUrl || generating}>
               <Download className="h-4 w-4" />
-              Descargar
+              PNG
             </Button>
-            <Button onClick={handleShare} variant="secondary" className="flex-1" disabled={!dataUrl || generating}>
+            <Button onClick={handleDownloadPdf} variant="outline" className="w-full" disabled={!dataUrl || generating}>
+              <FileText className="h-4 w-4" />
+              PDF
+            </Button>
+            <Button onClick={handleShare} variant="secondary" className="w-full" disabled={!dataUrl || generating}>
               <Share2 className="h-4 w-4" />
               Compartir
             </Button>

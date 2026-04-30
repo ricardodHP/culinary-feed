@@ -3,23 +3,35 @@ import { Bot, X } from "lucide-react";
 
 interface Props {
   onClick: () => void;
+  used?: boolean;
 }
 
-const AssistantFloatingButton = ({ onClick }: Props) => {
+const SHOW_DELAY = 3000;       // first appearance after mount
+const VISIBLE_DURATION = 3000; // how long it stays visible
+const REPEAT_INTERVAL = 45000; // re-appear every 45s if user hasn't used it
+
+const AssistantFloatingButton = ({ onClick, used = false }: Props) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
+  // Recurring appearance loop until the assistant is used or dismissed
   useEffect(() => {
-    const showTimer = setTimeout(() => {
-      if (!dismissed) setShowTooltip(true);
-    }, 3000);
-    return () => clearTimeout(showTimer);
-  }, [dismissed]);
+    if (used || dismissed) {
+      setShowTooltip(false);
+      return;
+    }
+    const initial = setTimeout(() => setShowTooltip(true), SHOW_DELAY);
+    const interval = setInterval(() => setShowTooltip(true), REPEAT_INTERVAL);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(interval);
+    };
+  }, [used, dismissed]);
 
-  // Auto-hide tooltip 3s after it appears
+  // Auto-hide tooltip after it appears
   useEffect(() => {
     if (!showTooltip) return;
-    const hideTimer = setTimeout(() => setShowTooltip(false), 3000);
+    const hideTimer = setTimeout(() => setShowTooltip(false), VISIBLE_DURATION);
     return () => clearTimeout(hideTimer);
   }, [showTooltip]);
 

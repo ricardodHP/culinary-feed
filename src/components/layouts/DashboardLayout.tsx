@@ -83,7 +83,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2">
             {restaurant && (
               <button
-                onClick={togglePublished}
+                onClick={() => {
+                  if (isPublished) setConfirmUnpublishOpen(true);
+                  else togglePublished();
+                }}
                 disabled={toggling}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",

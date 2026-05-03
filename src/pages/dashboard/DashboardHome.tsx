@@ -120,19 +120,6 @@ export default function DashboardHome() {
     toast.success("Logo subido. Recuerda guardar los cambios.");
   };
 
-  const togglePublished = async () => {
-    if (!restaurant) return;
-    const newStatus: RestaurantStatus = form.status === "published" ? "draft" : "published";
-    setForm((f) => ({ ...f, status: newStatus }));
-    const { error } = await supabase
-      .from("restaurants")
-      .update({ status: newStatus })
-      .eq("id", restaurant.id);
-    if (error) toast.error(error.message);
-    else toast.success(newStatus === "published" ? "Menú publicado" : "Menú en borrador");
-    reload();
-  };
-
   if (loading) {
     return (
       <DashboardLayout>
@@ -155,29 +142,21 @@ export default function DashboardHome() {
 
   return (
     <DashboardLayout>
-      <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
-        <div>
-          <h2 className="text-2xl font-bold">Información del restaurante</h2>
-          <p className="text-sm text-muted-foreground">
-            Edita los datos generales que verán tus clientes
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant={form.status === "published" ? "default" : "secondary"}>
-            {form.status === "published" ? "Publicado" : "Borrador"}
-          </Badge>
-          <Button asChild variant="outline" size="sm">
-            <Link to={`/r/${restaurant.slug}`} target="_blank">
-              <Eye className="h-4 w-4" /> Preview
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setQrOpen(true)}>
-            <QrCode className="h-4 w-4" /> Compartir QR
-          </Button>
-          <Button size="sm" onClick={togglePublished}>
-            {form.status === "published" ? "Despublicar" : "Publicar"}
-          </Button>
-        </div>
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <Button asChild variant="outline" className="rounded-full h-11">
+          <Link to={`/r/${restaurant.slug}`} target="_blank">
+            <Eye className="h-4 w-4" /> Preview
+          </Link>
+        </Button>
+        <Button variant="outline" className="rounded-full h-11" onClick={() => setQrOpen(true)}>
+          <QrCode className="h-4 w-4" /> Compartir QR
+        </Button>
+      </div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold">Información del restaurante</h2>
+        <p className="text-sm text-muted-foreground">
+          Edita los datos generales que verán tus clientes
+        </p>
       </div>
 
       <Card>

@@ -30,7 +30,7 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export default function QrCodeModal({ open, onOpenChange, url, restaurantName, logoUrl }: QrCodeModalProps) {
+export default function QrCodeModal({ open, onOpenChange, url, restaurantName, logoUrl, customizable = true }: QrCodeModalProps) {
   const [dataUrl, setDataUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);

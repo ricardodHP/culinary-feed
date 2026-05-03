@@ -1,5 +1,7 @@
-import { Heart, MessageCircle, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Heart, MessageCircle, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import QrCodeModal from "@/components/QrCodeModal";
 import type { RestaurantInfo } from "@/data/restaurant";
 
 interface ProfileHeaderProps {
@@ -7,6 +9,8 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader = ({ restaurant }: ProfileHeaderProps) => {
+  const [qrOpen, setQrOpen] = useState(false);
+  const menuUrl = `${window.location.origin}/r/${restaurant.username}`;
   return (
     <div className="px-4 pt-4 pb-2">
       {/* Top row: avatar + stats */}
@@ -79,17 +83,25 @@ const ProfileHeader = ({ restaurant }: ProfileHeaderProps) => {
             Mensaje
           </Button>
         )}
-        {restaurant.instagramLink && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => window.open(restaurant.instagramLink, "_blank")}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </Button>
-        )}
+        <Button
+          variant="secondary"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setQrOpen(true)}
+          aria-label="Compartir QR del menú"
+          title="Compartir QR del menú"
+        >
+          <QrCode className="w-3.5 h-3.5" />
+        </Button>
       </div>
+
+      <QrCodeModal
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        url={menuUrl}
+        restaurantName={restaurant.name}
+        logoUrl={restaurant.logo}
+      />
     </div>
   );
 };

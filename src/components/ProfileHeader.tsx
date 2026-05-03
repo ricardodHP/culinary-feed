@@ -1,5 +1,7 @@
-import { Heart, MessageCircle, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Heart, MessageCircle, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import QrCodeModal from "@/components/QrCodeModal";
 import type { RestaurantInfo } from "@/data/restaurant";
 
 interface ProfileHeaderProps {
@@ -7,6 +9,8 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader = ({ restaurant }: ProfileHeaderProps) => {
+  const [qrOpen, setQrOpen] = useState(false);
+  const menuUrl = `${window.location.origin}/r/${restaurant.username}`;
   return (
     <div className="px-4 pt-4 pb-2">
       {/* Top row: avatar + stats */}

@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { restaurant, reload } = useManagedRestaurant();
   const [menuOpen, setMenuOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
-  const [confirmUnpublishOpen, setConfirmUnpublishOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -83,10 +83,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2">
             {restaurant && (
               <button
-                onClick={() => {
-                  if (isPublished) setConfirmUnpublishOpen(true);
-                  else togglePublished();
-                }}
+                onClick={() => setConfirmOpen(true)}
                 disabled={toggling}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
@@ -149,23 +146,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="flex-1 container mx-auto px-4 py-6">{children}</main>
-      <AlertDialog open={confirmUnpublishOpen} onOpenChange={setConfirmUnpublishOpen}>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Despublicar el menú?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isPublished ? "¿Despublicar el menú?" : "¿Publicar el menú?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              El menú dejará de estar disponible para tus clientes hasta que vuelvas a publicarlo.
+              {isPublished
+                ? "El menú dejará de estar disponible para tus clientes hasta que vuelvas a publicarlo."
+                : "El menú quedará visible para tus clientes en la URL pública."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                setConfirmUnpublishOpen(false);
+                setConfirmOpen(false);
                 togglePublished();
               }}
             >
-              Despublicar
+              {isPublished ? "Despublicar" : "Publicar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

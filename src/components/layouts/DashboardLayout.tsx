@@ -10,6 +10,16 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   LogOut,
   Store,
   UtensilsCrossed,
@@ -37,6 +47,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { restaurant, reload } = useManagedRestaurant();
   const [menuOpen, setMenuOpen] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [confirmUnpublishOpen, setConfirmUnpublishOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();

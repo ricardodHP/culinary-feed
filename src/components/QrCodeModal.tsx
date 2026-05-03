@@ -243,6 +243,7 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
           </div>
 
           {/* Customization */}
+          {customizable && (
           <div className="w-full space-y-4 rounded-md border p-3">
             <div className="flex items-center justify-between gap-3">
               <Label className="text-xs">Tamaño</Label>
@@ -315,6 +316,7 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
               </div>
             )}
           </div>
+          )}
 
           <div className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2">
             <Button onClick={handleDownload} className="w-full" disabled={!dataUrl || generating}>

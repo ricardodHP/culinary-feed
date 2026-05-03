@@ -149,6 +149,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="flex-1 container mx-auto px-4 py-6">{children}</main>
+      <AlertDialog open={confirmUnpublishOpen} onOpenChange={setConfirmUnpublishOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Despublicar el menú?</AlertDialogTitle>
+            <AlertDialogDescription>
+              El menú dejará de estar disponible para tus clientes hasta que vuelvas a publicarlo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmUnpublishOpen(false);
+                togglePublished();
+              }}
+            >
+              Despublicar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

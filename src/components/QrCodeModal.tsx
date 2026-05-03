@@ -15,6 +15,7 @@ interface QrCodeModalProps {
   url: string;
   restaurantName: string;
   logoUrl?: string | null;
+  customizable?: boolean;
 }
 
 const PRESET_COLORS = ["#000000", "#0F172A", "#7C2D12", "#065F46", "#1E3A8A", "#7E22CE"];
@@ -29,7 +30,7 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export default function QrCodeModal({ open, onOpenChange, url, restaurantName, logoUrl }: QrCodeModalProps) {
+export default function QrCodeModal({ open, onOpenChange, url, restaurantName, logoUrl, customizable = true }: QrCodeModalProps) {
   const [dataUrl, setDataUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -242,6 +243,7 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
           </div>
 
           {/* Customization */}
+          {customizable && (
           <div className="w-full space-y-4 rounded-md border p-3">
             <div className="flex items-center justify-between gap-3">
               <Label className="text-xs">Tamaño</Label>
@@ -314,6 +316,7 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
               </div>
             )}
           </div>
+          )}
 
           <div className="grid w-full grid-cols-1 sm:grid-cols-3 gap-2">
             <Button onClick={handleDownload} className="w-full" disabled={!dataUrl || generating}>

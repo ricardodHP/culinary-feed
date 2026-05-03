@@ -101,6 +101,7 @@ const ProfileHeader = ({ restaurant }: ProfileHeaderProps) => {
         url={menuUrl}
         restaurantName={restaurant.name}
         logoUrl={restaurant.logo}
+        customizable={false}
       />
     </div>
   );

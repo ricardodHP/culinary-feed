@@ -15,6 +15,7 @@ interface QrCodeModalProps {
   url: string;
   restaurantName: string;
   logoUrl?: string | null;
+  customizable?: boolean;
 }
 
 const PRESET_COLORS = ["#000000", "#0F172A", "#7C2D12", "#065F46", "#1E3A8A", "#7E22CE"];

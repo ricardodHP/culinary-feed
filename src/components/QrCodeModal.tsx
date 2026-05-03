@@ -218,7 +218,9 @@ export default function QrCodeModal({ open, onOpenChange, url, restaurantName, l
         <DialogHeader>
           <DialogTitle>Código QR de tu menú</DialogTitle>
           <DialogDescription>
-            Personaliza, descarga o comparte el QR para que tus clientes vean tu menú al escanearlo.
+            {customizable
+              ? "Personaliza, descarga o comparte el QR para que tus clientes vean tu menú al escanearlo."
+              : "Comparte este QR con tus amigos para que vean el menú. Escanéalo o copia el enlace."}
           </DialogDescription>
         </DialogHeader>
 

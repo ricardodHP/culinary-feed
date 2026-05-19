@@ -1,10 +1,20 @@
-import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
+import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle, Users, LogOut, Share2 } from "lucide-react";
+import { useCart, getStoredName } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useRestaurantData } from "@/hooks/useRestaurantData";
+import { toast } from "sonner";
 
 const CartModal = () => {
-  const { items, updateQuantity, removeItem, clearCart, totalItems, totalPrice, isCartOpen, setIsCartOpen } = useCart();
+  const {
+    items, updateQuantity, removeItem, clearCart, totalItems, totalPrice,
+    isCartOpen, setIsCartOpen,
+    shared, createSharedCart, leaveSharedCart, participants,
+  } = useCart();
+  const { slug } = useParams<{ slug: string }>();
+  const { restaurant } = useRestaurantData(slug);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (isCartOpen) {
@@ -16,6 +26,47 @@ const CartModal = () => {
   }, [isCartOpen]);
 
   if (!isCartOpen) return null;
+
+  const handleCreateShared = async () => {
+    if (!restaurant) {
+      toast.error("Restaurante no disponible");
+      return;
+    }
+    const stored = getStoredName();
+    const name = stored ?? window.prompt("¿Cuál es tu nombre?", "")?.trim() ?? "";
+    if (!name) {
+      toast.error("Necesitas un nombre para crear el carrito");
+      return;
+    }
+    setCreating(true);
+    try {
+      const code = await createSharedCart(restaurant.id, name);
+      const url = `${window.location.origin}/r/${restaurant.username}?group=${code}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Carrito compartido creado", {
+          description: "Enlace copiado. Envíalo a tus amigos.",
+        });
+      } catch {
+        toast.success("Carrito compartido creado", { description: url });
+      }
+    } catch (e) {
+      toast.error("No se pudo crear el carrito compartido");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleShareLink = async () => {
+    if (!shared || !restaurant) return;
+    const url = `${window.location.origin}/r/${restaurant.username}?group=${shared.code}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Enlace copiado");
+    } catch {
+      toast.error("No se pudo copiar el enlace");
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60]">
@@ -32,11 +83,11 @@ const CartModal = () => {
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-primary" />
             <h3 className="text-base font-bold text-foreground">
-              Mi Orden ({totalItems})
+              {shared ? "Carrito grupal" : "Mi Orden"} ({totalItems})
             </h3>
           </div>
           <div className="flex items-center gap-2">
-            {items.length > 0 && (
+            {items.length > 0 && !shared && (
               <button
                 onClick={clearCart}
                 className="text-xs text-muted-foreground hover:text-destructive transition-colors"
@@ -49,6 +100,45 @@ const CartModal = () => {
             </button>
           </div>
         </div>
+
+        {/* Shared banner */}
+        {shared && (
+          <div className="px-4 py-2.5 bg-primary/10 border-b border-border flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <Users className="w-4 h-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-foreground truncate">
+                  Carrito compartido · código {shared.code.toUpperCase()}
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {participants.length > 0
+                    ? `Participan: ${participants.join(", ")}`
+                    : "Comparte el enlace con tus amigos"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={handleShareLink}
+                className="p-1.5 rounded-full hover:bg-primary/20 text-primary"
+                aria-label="Copiar enlace"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm("¿Salir del carrito grupal? Tu carrito local quedará vacío.")) {
+                    leaveSharedCart();
+                  }
+                }}
+                className="p-1.5 rounded-full hover:bg-destructive/10 text-destructive"
+                aria-label="Salir del grupo"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Items */}
         <div className="flex-1 overflow-y-auto">
@@ -74,6 +164,11 @@ const CartModal = () => {
                     <p className="text-sm font-bold text-primary">
                       ${item.dish.price * item.quantity} MXN
                     </p>
+                    {shared && item.addedByName && (
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        Agregado por {item.addedByName}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
@@ -132,6 +227,17 @@ const CartModal = () => {
                 WhatsApp
               </Button>
             </div>
+            {!shared && (
+              <Button
+                variant="secondary"
+                className="w-full h-10 text-sm font-semibold"
+                onClick={handleCreateShared}
+                disabled={creating}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                {creating ? "Creando..." : "Compartir con amigos (carrito en vivo)"}
+              </Button>
+            )}
           </div>
         )}
       </div>

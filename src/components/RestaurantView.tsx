@@ -1,5 +1,7 @@
-import { useState, useMemo, useCallback, type CSSProperties } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useCallback, useEffect, type CSSProperties } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useCart, getStoredName } from "@/contexts/CartContext";
+import { toast } from "sonner";
 import { Grid3X3, Star, Search, X, User } from "lucide-react";
 import { useAuth, getDefaultRouteForRoles } from "@/contexts/AuthContext";
 import ProfileHeader from "@/components/ProfileHeader";
@@ -33,6 +35,53 @@ const RestaurantView = ({ restaurant, categories, dishes }: RestaurantViewProps)
   const [refreshTick, setRefreshTick] = useState(0);
   const { user, roles } = useAuth();
   const accountHref = user ? getDefaultRouteForRoles(roles) : "/login";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { setDishResolver, joinSharedCart, shared } = useCart();
+
+  // Register a resolver so the shared cart can map dish_id → Dish.
+  useEffect(() => {
+    const map = new Map(dishes.map((d) => [d.id, d]));
+    setDishResolver((id) => map.get(id));
+  }, [dishes, setDishResolver]);
+
+  // Handle ?dish=<id> deep link: open the feed centered on that dish.
+  useEffect(() => {
+    const dishId = searchParams.get("dish");
+    if (!dishId || dishes.length === 0) return;
+    const idx = dishes.findIndex((d) => d.id === dishId);
+    if (idx >= 0) {
+      setFeedStartIndex(idx);
+      setFeedOpen(true);
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete("dish");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dishes]);
+
+  // Handle ?group=<code> deep link: join the shared cart.
+  useEffect(() => {
+    const code = searchParams.get("group");
+    if (!code || shared) return;
+    const stored = getStoredName();
+    const name = stored ?? window.prompt("Tu nombre para el carrito compartido:", "")?.trim() ?? "";
+    if (!name) {
+      toast.error("Necesitas un nombre para unirte al carrito");
+      const next = new URLSearchParams(searchParams);
+      next.delete("group");
+      setSearchParams(next, { replace: true });
+      return;
+    }
+    joinSharedCart(code, name).then((ok) => {
+      if (ok) toast.success("Te uniste al carrito compartido");
+      else toast.error("Carrito no encontrado o expirado");
+      const next = new URLSearchParams(searchParams);
+      next.delete("group");
+      setSearchParams(next, { replace: true });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get("group")]);
+
 
   const tpl = getTemplateStyles(restaurant.cuisineTemplate);
   const rootStyle: CSSProperties = {

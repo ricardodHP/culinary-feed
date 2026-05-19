@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Heart, Star, Plus, Check, X, MessageCircle } from "lucide-react";
+import { Heart, Star, Plus, Check, X, MessageCircle, Share2 } from "lucide-react";
 import type { Dish, RestaurantInfo } from "@/data/restaurant";
 import { useCart } from "@/contexts/CartContext";
 import { useLikes } from "@/contexts/LikesContext";
 import { trackEvent } from "@/lib/analytics";
 import ReviewsModal from "@/components/ReviewsModal";
+import { toast } from "sonner";
 
 interface DishFeedProps {
   dishes: Dish[];

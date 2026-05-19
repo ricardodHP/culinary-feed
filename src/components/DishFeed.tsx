@@ -161,6 +161,23 @@ const DishFeed = ({ dishes, startIndex, restaurant, headerTitle, onClose, onRevi
                     </>
                   )}
                 </button>
+                <button
+                  onClick={async () => {
+                    const url = `${window.location.origin}/r/${restaurant.username}?dish=${dish.id}`;
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      toast.success("Enlace del platillo copiado", {
+                        description: "Compártelo con tus amigos para que lo vean.",
+                      });
+                    } catch {
+                      toast.error("No se pudo copiar el enlace");
+                    }
+                  }}
+                  className="active:scale-125 transition-transform"
+                  aria-label="Compartir platillo"
+                >
+                  <Share2 className="w-6 h-6 text-foreground" />
+                </button>
               </div>
               {dish.showRating && (
                 <button

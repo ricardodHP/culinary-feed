@@ -1,5 +1,7 @@
-import { useState, useMemo, useCallback, type CSSProperties } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useCallback, useEffect, type CSSProperties } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useCart, getStoredName } from "@/contexts/CartContext";
+import { toast } from "sonner";
 import { Grid3X3, Star, Search, X, User } from "lucide-react";
 import { useAuth, getDefaultRouteForRoles } from "@/contexts/AuthContext";
 import ProfileHeader from "@/components/ProfileHeader";

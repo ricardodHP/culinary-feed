@@ -268,6 +268,77 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_cart_items: {
+        Row: {
+          added_by_device: string
+          added_by_name: string | null
+          cart_id: string
+          created_at: string
+          dish_id: string
+          id: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          added_by_device: string
+          added_by_name?: string | null
+          cart_id: string
+          created_at?: string
+          dish_id: string
+          id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          added_by_device?: string
+          added_by_name?: string | null
+          cart_id?: string
+          created_at?: string
+          dish_id?: string
+          id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_cart_items_cart_id_fkey"
+            columns: ["cart_id"]
+            isOneToOne: false
+            referencedRelation: "shared_carts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_carts: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          host_device_id: string
+          host_name: string | null
+          id: string
+          restaurant_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          host_device_id: string
+          host_name?: string | null
+          id?: string
+          restaurant_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          host_device_id?: string
+          host_name?: string | null
+          id?: string
+          restaurant_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

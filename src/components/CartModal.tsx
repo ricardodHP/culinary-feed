@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
 import SharedCartQrModal from "./SharedCartQrModal";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const CartModal = () => {
   const {

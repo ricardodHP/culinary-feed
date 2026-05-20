@@ -1,10 +1,11 @@
 import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle, Users, LogOut, Share2 } from "lucide-react";
 import { useCart, getStoredName } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
+import SharedCartQrModal from "./SharedCartQrModal";
 
 const CartModal = () => {
   const {
@@ -15,6 +16,12 @@ const CartModal = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant } = useRestaurantData(slug);
   const [creating, setCreating] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+
+  const shareUrl = useMemo(() => {
+    if (!shared || !restaurant) return "";
+    return `${window.location.origin}/r/${restaurant.username}?group=${shared.code}`;
+  }, [shared, restaurant]);
 
   useEffect(() => {
     if (isCartOpen) {

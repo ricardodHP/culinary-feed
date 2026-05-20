@@ -47,16 +47,8 @@ const CartModal = () => {
     }
     setCreating(true);
     try {
-      const code = await createSharedCart(restaurant.id, name);
-      const url = `${window.location.origin}/r/${restaurant.username}?group=${code}`;
-      try {
-        await navigator.clipboard.writeText(url);
-        toast.success("Carrito compartido creado", {
-          description: "Enlace copiado. Envíalo a tus amigos.",
-        });
-      } catch {
-        toast.success("Carrito compartido creado", { description: url });
-      }
+      await createSharedCart(restaurant.id, name);
+      setQrOpen(true);
     } catch (e) {
       toast.error("No se pudo crear el carrito compartido");
     } finally {
@@ -64,15 +56,9 @@ const CartModal = () => {
     }
   };
 
-  const handleShareLink = async () => {
+  const handleShareLink = () => {
     if (!shared || !restaurant) return;
-    const url = `${window.location.origin}/r/${restaurant.username}?group=${shared.code}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Enlace copiado");
-    } catch {
-      toast.error("No se pudo copiar el enlace");
-    }
+    setQrOpen(true);
   };
 
   return (

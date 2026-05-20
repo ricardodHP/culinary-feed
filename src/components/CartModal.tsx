@@ -62,6 +62,7 @@ const CartModal = () => {
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-[60]">
       {/* Backdrop */}
       <div

@@ -236,7 +236,17 @@ const CartModal = () => {
         )}
       </div>
     </div>
+    <SharedCartQrModal
+      open={qrOpen}
+      onClose={() => setQrOpen(false)}
+      url={shareUrl}
+      code={shared?.code ?? ""}
+      restaurantName={restaurant?.name}
+    />
+    </>
   );
 };
+
+export default CartModal;
 
 export default CartModal;

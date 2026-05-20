@@ -1,10 +1,11 @@
 import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle, Users, LogOut, Share2 } from "lucide-react";
 import { useCart, getStoredName } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
+import SharedCartQrModal from "./SharedCartQrModal";
 
 const CartModal = () => {
   const {
@@ -15,6 +16,12 @@ const CartModal = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant } = useRestaurantData(slug);
   const [creating, setCreating] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+
+  const shareUrl = useMemo(() => {
+    if (!shared || !restaurant) return "";
+    return `${window.location.origin}/r/${restaurant.username}?group=${shared.code}`;
+  }, [shared, restaurant]);
 
   useEffect(() => {
     if (isCartOpen) {
@@ -40,16 +47,8 @@ const CartModal = () => {
     }
     setCreating(true);
     try {
-      const code = await createSharedCart(restaurant.id, name);
-      const url = `${window.location.origin}/r/${restaurant.username}?group=${code}`;
-      try {
-        await navigator.clipboard.writeText(url);
-        toast.success("Carrito compartido creado", {
-          description: "Enlace copiado. Envíalo a tus amigos.",
-        });
-      } catch {
-        toast.success("Carrito compartido creado", { description: url });
-      }
+      await createSharedCart(restaurant.id, name);
+      setQrOpen(true);
     } catch (e) {
       toast.error("No se pudo crear el carrito compartido");
     } finally {
@@ -57,18 +56,13 @@ const CartModal = () => {
     }
   };
 
-  const handleShareLink = async () => {
+  const handleShareLink = () => {
     if (!shared || !restaurant) return;
-    const url = `${window.location.origin}/r/${restaurant.username}?group=${shared.code}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Enlace copiado");
-    } catch {
-      toast.error("No se pudo copiar el enlace");
-    }
+    setQrOpen(true);
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-[60]">
       {/* Backdrop */}
       <div
@@ -108,12 +102,12 @@ const CartModal = () => {
               <Users className="w-4 h-4 text-primary shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-foreground truncate">
-                  Carrito compartido · código {shared.code.toUpperCase()}
+                  Código para unirse: <span className="tracking-widest">{shared.code.toUpperCase()}</span>
                 </p>
                 <p className="text-[11px] text-muted-foreground truncate">
                   {participants.length > 0
                     ? `Participan: ${participants.join(", ")}`
-                    : "Comparte el enlace con tus amigos"}
+                    : "Toca el ícono para mostrar el QR"}
                 </p>
               </div>
             </div>
@@ -121,7 +115,7 @@ const CartModal = () => {
               <button
                 onClick={handleShareLink}
                 className="p-1.5 rounded-full hover:bg-primary/20 text-primary"
-                aria-label="Copiar enlace"
+                aria-label="Mostrar QR del carrito"
               >
                 <Share2 className="w-4 h-4" />
               </button>
@@ -242,6 +236,14 @@ const CartModal = () => {
         )}
       </div>
     </div>
+    <SharedCartQrModal
+      open={qrOpen}
+      onClose={() => setQrOpen(false)}
+      url={shareUrl}
+      code={shared?.code ?? ""}
+      restaurantName={restaurant?.name}
+    />
+    </>
   );
 };
 

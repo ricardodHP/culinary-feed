@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
 import SharedCartQrModal from "./SharedCartQrModal";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const CartModal = () => {
   const {
@@ -142,6 +143,113 @@ const CartModal = () => {
               <p className="text-sm font-medium">Tu orden está vacía</p>
               <p className="text-xs mt-1">Agrega platillos para comenzar</p>
             </div>
+          ) : shared ? (
+            (() => {
+              const myName = (getStoredName() ?? "").trim();
+              const groups = new Map<string, typeof items>();
+              for (const it of items) {
+                const key = (it.addedByName ?? "Sin nombre").trim() || "Sin nombre";
+                if (!groups.has(key)) groups.set(key, [] as typeof items);
+                groups.get(key)!.push(it);
+              }
+              const myKey = myName || "Sin nombre";
+              const mine = groups.get(myKey) ?? [];
+              groups.delete(myKey);
+              const others = Array.from(groups.entries());
+
+              const renderItem = (item: typeof items[number]) => (
+                <div key={item.dish.id} className="flex items-center gap-3 px-4 py-3">
+                  <img
+                    src={item.dish.image}
+                    alt={item.dish.name}
+                    className="w-14 h-14 rounded-lg object-cover shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{item.dish.name}</p>
+                    <p className="text-sm font-bold text-primary">
+                      ${item.dish.price * item.quantity} MXN
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => updateQuantity(item.dish.id, item.quantity - 1)}
+                      className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                    >
+                      {item.quantity === 1 ? (
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      ) : (
+                        <Minus className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    <span className="text-sm font-semibold w-5 text-center text-foreground">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.dish.id, item.quantity + 1)}
+                      className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:opacity-90 transition-opacity"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+
+              const groupTotal = (list: typeof items) =>
+                list.reduce((s, i) => s + i.dish.price * i.quantity, 0);
+              const groupCount = (list: typeof items) =>
+                list.reduce((s, i) => s + i.quantity, 0);
+
+              return (
+                <div>
+                  {/* My items always on top */}
+                  <div className="bg-primary/5 border-b border-border">
+                    <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                        Tus platillos {myName ? `· ${myName}` : ""}
+                      </p>
+                      <span className="text-[11px] text-muted-foreground">
+                        {groupCount(mine)} · ${groupTotal(mine)} MXN
+                      </span>
+                    </div>
+                    {mine.length === 0 ? (
+                      <p className="px-4 pb-3 pt-1 text-xs text-muted-foreground">
+                        Aún no has agregado nada al carrito grupal.
+                      </p>
+                    ) : (
+                      <div className="divide-y divide-border">{mine.map(renderItem)}</div>
+                    )}
+                  </div>
+
+                  {/* Other participants as accordion */}
+                  {others.length > 0 && (
+                    <Accordion type="multiple" className="px-2">
+                      {others.map(([name, list]) => (
+                        <AccordionItem key={name} value={name} className="border-b border-border">
+                          <AccordionTrigger className="px-2 py-3 hover:no-underline">
+                            <div className="flex items-center justify-between w-full pr-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-foreground shrink-0">
+                                  {name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-sm font-semibold text-foreground truncate">
+                                  {name}
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-muted-foreground shrink-0 ml-2">
+                                {groupCount(list)} · ${groupTotal(list)} MXN
+                              </span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="p-0">
+                            <div className="divide-y divide-border">{list.map(renderItem)}</div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             <div className="divide-y divide-border">
               {items.map((item) => (
@@ -152,17 +260,10 @@ const CartModal = () => {
                     className="w-14 h-14 rounded-lg object-cover shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {item.dish.name}
-                    </p>
+                    <p className="text-sm font-semibold text-foreground truncate">{item.dish.name}</p>
                     <p className="text-sm font-bold text-primary">
                       ${item.dish.price * item.quantity} MXN
                     </p>
-                    {shared && item.addedByName && (
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        Agregado por {item.addedByName}
-                      </p>
-                    )}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button

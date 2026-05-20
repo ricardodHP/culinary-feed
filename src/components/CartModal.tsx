@@ -101,12 +101,12 @@ const CartModal = () => {
               <Users className="w-4 h-4 text-primary shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-foreground truncate">
-                  Carrito compartido · código {shared.code.toUpperCase()}
+                  Código para unirse: <span className="tracking-widest">{shared.code.toUpperCase()}</span>
                 </p>
                 <p className="text-[11px] text-muted-foreground truncate">
                   {participants.length > 0
                     ? `Participan: ${participants.join(", ")}`
-                    : "Comparte el enlace con tus amigos"}
+                    : "Toca el ícono para mostrar el QR"}
                 </p>
               </div>
             </div>

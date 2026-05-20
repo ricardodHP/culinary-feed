@@ -114,7 +114,7 @@ const CartModal = () => {
               <button
                 onClick={handleShareLink}
                 className="p-1.5 rounded-full hover:bg-primary/20 text-primary"
-                aria-label="Copiar enlace"
+                aria-label="Mostrar QR del carrito"
               >
                 <Share2 className="w-4 h-4" />
               </button>

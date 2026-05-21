@@ -82,7 +82,7 @@ export default function DashboardWaiters() {
     if (!restaurant) return;
     setLoading(true);
     const { data, error } = await supabase
-      .from("waiters" as never)
+      .from("waiters")
       .select("id, username, display_name, is_active, last_login_at, created_at")
       .eq("restaurant_id", restaurant.id)
       .order("created_at", { ascending: false });

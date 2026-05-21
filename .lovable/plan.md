@@ -1,96 +1,89 @@
-## Compartir platillo y carrito colaborativo
 
-Dos funciones independientes para compartir con amigos.
+# Etapa 1 — Meseros (usuario + PIN) por restaurante
 
----
+Esta etapa solo cubre **gestión de cuentas de mesero**. Mesas, sesiones, QR de mesa y órdenes se diseñan en etapas siguientes (dejamos la puerta abierta pero no creamos esas tablas todavía).
 
-### 1) Compartir un platillo individual (link "copiar enlace")
+## Decisiones aplicadas
 
-**UI**
-- En `DishFeed.tsx`, junto a los botones de like / carrito de cada platillo, añadir un botón "Compartir" (icono `Share2` o `Link`).
-- Al pulsar: copia al portapapeles un enlace tipo:
-  `https://<dominio>/r/<slug>?dish=<dishId>`
-- Muestra toast: "Enlace copiado. Tu amigo verá el platillo al abrirlo."
+- Mesero pertenece a **un restaurante** (campo `restaurant_id` obligatorio).
+- Pueden crear meseros: **admin de plataforma** y **owner del restaurante**.
+- Login del mesero: **usuario + PIN**, sin email real, fuera del flujo `auth.users` de Supabase. Esto se hace mediante una edge function que valida credenciales y devuelve una sesión propia (token firmado) para el mesero.
 
-**Apertura del link en el amigo**
-- En `RestaurantPublic.tsx`, leer `?dish=<id>` desde `useSearchParams`.
-- Si existe y el platillo está en la lista, abrir automáticamente el `DishFeed` centrado en ese platillo (usando el `startIndex` correspondiente).
-- El amigo verá un botón "Agregar a mi carrito" (el mismo que ya existe en el feed) y podrá sumarlo a su propio carrito local.
+## Modelo de datos
 
-**Analytics**: `trackEvent({ eventType: "view", dishId })` ya cubre la apertura. Opcional: añadir un nuevo `event_type` `share` más adelante (no en este plan).
+Nueva tabla `public.waiters`:
 
----
+- `restaurant_id` (FK lógica → restaurants)
+- `username` (único por restaurante, lowercase, 3–30 chars)
+- `display_name`
+- `pin_hash` (hash bcrypt del PIN, nunca el PIN en claro)
+- `is_active` (boolean, default true)
+- `last_login_at`
+- `created_by` (uuid del admin/owner que lo creó)
 
-### 2) Carrito colaborativo en vivo
+Índice único compuesto `(restaurant_id, username)`.
 
-Varios amigos comparten un mismo carrito en tiempo real. El "anfitrión" crea el carrito y comparte un link; los invitados lo abren y pueden añadir/quitar platillos. Todos ven los cambios al instante.
+Nueva tabla `public.waiter_sessions` (para tokens emitidos por la edge function):
 
-**Modelo de datos (nueva migración)**
+- `waiter_id`
+- `token_hash`
+- `expires_at`
+- `created_at`, `revoked_at`
 
-```
-shared_carts
-  id uuid PK
-  restaurant_id uuid (no FK, igual que el resto del proyecto)
-  code text unique         -- short code para el link (ej. "a7k2qx")
-  host_device_id text      -- localStorage id del creador
-  created_at timestamptz
-  expires_at timestamptz   -- now() + 24h (validado por trigger, no CHECK)
+Se añade enum `app_role` valor `'waiter'` solo si más adelante también queremos darle entrada al sistema vía `auth.users`. **En esta etapa NO lo agregamos** — el mesero no es un `auth.users`, vive solo en `waiters`.
 
-shared_cart_items
-  id uuid PK
-  cart_id uuid -> shared_carts.id (on delete cascade)
-  dish_id uuid
-  quantity int default 1
-  added_by_name text       -- nombre opcional ("Ana", "Luis")
-  added_by_device text     -- localStorage id
-  created_at timestamptz
-```
+## RLS
 
-**RLS**
-- `shared_carts`: SELECT / INSERT / UPDATE / DELETE públicos (anon + authenticated) condicionados a `expires_at > now()`. El carrito es efímero y sin datos personales sensibles; el `code` actúa como secreto.
-- `shared_cart_items`: mismas reglas, validando que el `cart_id` referenciado siga vigente.
-- Trigger `BEFORE INSERT` en `shared_carts` para validar `expires_at` (no CHECK).
+`waiters`:
+- SELECT / INSERT / UPDATE / DELETE permitido si `has_role(auth.uid(), 'admin')` **o** `auth.uid() = restaurants.owner_id` del restaurante referido.
+- `anon` no puede leer (los PIN hash no deben exponerse).
 
-**Realtime**
-- `ALTER PUBLICATION supabase_realtime ADD TABLE public.shared_carts, public.shared_cart_items;`
-- Suscripción `postgres_changes` a `shared_cart_items` filtrada por `cart_id`.
+`waiter_sessions`:
+- Sin acceso desde el cliente. Toda lectura/escritura va por edge functions con service role.
 
-**Flujo UI**
+## Edge functions
 
-En `CartModal.tsx`, añadir un botón "Compartir con amigos" junto a "Mostrar al mesero" / "WhatsApp":
+1. `waiter-create` — admin/owner crea mesero. Valida rol, hashea PIN con bcrypt, inserta fila.
+2. `waiter-set-pin` — admin/owner reinicia el PIN de un mesero existente.
+3. `waiter-login` — público. Recibe `{ restaurant_slug, username, pin }`, valida hash, crea fila en `waiter_sessions` y devuelve `{ token, waiter: {...} }`.
+4. `waiter-logout` — invalida sesión.
+5. `waiter-me` — valida token y devuelve datos del mesero (útil para proteger rutas futuras).
 
-1. Si aún no hay carrito compartido:
-   - Crea un registro en `shared_carts`, sube los items actuales a `shared_cart_items`.
-   - Copia al portapapeles: `https://<dominio>/r/<slug>?group=<code>`.
-   - Muestra un banner en el carrito: "Carrito compartido activo · 1 persona".
+Todas con CORS, validación Zod, y `verify_jwt = false` para `waiter-login` (es público).
 
-2. Si el amigo abre el link con `?group=<code>`:
-   - Hook nuevo `useSharedCart(code)` que:
-     - Carga el carrito y suscribe a cambios realtime.
-     - Reemplaza el `CartContext` local por uno "espejo" del carrito remoto: `addItem` / `updateQuantity` / `removeItem` insertan/actualizan/borran en `shared_cart_items`.
-   - Banner: "Estás en el carrito de <nombre>. Lo que agregues se verá para todos."
-   - Pide un nombre corto la primera vez (guardado en localStorage) para mostrar quién agregó cada platillo.
+## UI
 
-3. Salir del modo compartido:
-   - Botón "Salir del grupo" → vuelve al carrito local.
+### Admin
+- Nueva pestaña **Admin → Restaurantes → [ver] → Meseros**: lista, crear, reset PIN, activar/desactivar.
 
-**Restricciones**
-- Solo funciona dentro del mismo restaurante (`restaurant_id` debe coincidir con el slug actual).
-- Si `expires_at` pasó o el code no existe → mostrar mensaje y caer al carrito local.
-- Sin auth: identidad por `device_id` (uuid en localStorage).
+### Owner
+- Nuevo item en el sidebar del dashboard: **"Meseros"** (`/dashboard/waiters`).
+- Lista de meseros del restaurante con: nombre, usuario, estado, último acceso.
+- Botón **"Nuevo mesero"** → modal con `display_name`, `username`, `pin` (4–6 dígitos), `confirmar pin`. Validación Zod en cliente.
+- Por fila: **Reset PIN**, **Activar/Desactivar**, **Eliminar** (con confirmación).
+- Nota visible: "El mesero inicia sesión en /mesero con este usuario y PIN."
 
----
+### Pantalla de login mesero (sólo placeholder en esta etapa)
+- Ruta pública `/mesero/login` con formulario `restaurante (slug) + usuario + PIN`. Al loguear guarda token en `localStorage` y redirige a `/mesero` (que en esta etapa solo muestra "Bienvenido {nombre}" — la operación real se construye en etapa 2).
 
-### Archivos a tocar
+## Fuera de alcance (siguientes etapas)
 
-- `src/components/DishFeed.tsx` — botón compartir platillo.
-- `src/components/CartModal.tsx` — botón "Compartir con amigos" + banner de estado.
-- `src/pages/RestaurantPublic.tsx` — leer `?dish` y `?group` de la URL.
-- `src/contexts/CartContext.tsx` — soporte para modo "shared" (sincroniza con Supabase en vez de estado local).
-- Nuevo `src/hooks/useSharedCart.ts` — crear, unirse, suscribirse, sincronizar.
-- Migración SQL: tablas `shared_carts`, `shared_cart_items`, RLS, trigger de expiración, publicación realtime.
+- Mesas (`tables`), sesiones de mesa (`table_sessions`), comensales (`diners`), órdenes (`orders`, `order_items`).
+- QR único por sesión de mesa.
+- Unir pedidos individuales a cuenta grupal.
+- Vista operativa del mesero (abrir mesa, generar QR, cerrar cuenta).
 
-### Fuera de alcance
-- Compartir el carrito como texto/resumen (descartado a favor de carrito en vivo).
-- WhatsApp / Share API nativo (solo "copiar enlace").
-- Eventos de analytics nuevos para `share`.
+## Detalles técnicos
+
+- Hash de PIN: `bcrypt` vía `npm:bcryptjs` en edge functions (cost 10).
+- Token de sesión mesero: UUID v4 aleatorio (32 bytes) almacenado hasheado con SHA-256 en `waiter_sessions.token_hash`; expiración 12 h, renovable.
+- Validación PIN: solo dígitos, longitud 4–6, no secuenciales obvios (1234, 0000) — warning, no bloqueo.
+- Memoria de proyecto a actualizar tras implementación: agregar regla "Los meseros son cuentas internas por restaurante (waiters table), login con usuario+PIN vía edge functions, no son auth.users."
+
+## Entregables de esta etapa
+
+1. Migración SQL: tablas `waiters`, `waiter_sessions`, RLS, índices.
+2. Edge functions `waiter-create`, `waiter-set-pin`, `waiter-login`, `waiter-logout`, `waiter-me`.
+3. Página `/dashboard/waiters` (owner) y sección Meseros en admin del restaurante.
+4. Página `/mesero/login` + `/mesero` (placeholder bienvenida).
+5. Hook `useWaiterSession()` para leer el token y datos del mesero logueado.

@@ -18,6 +18,9 @@ import DashboardHome from "./pages/dashboard/DashboardHome.tsx";
 import DashboardCategories from "./pages/dashboard/DashboardCategories.tsx";
 import DashboardDishes from "./pages/dashboard/DashboardDishes.tsx";
 import DashboardStats from "./pages/dashboard/DashboardStats.tsx";
+import DashboardWaiters from "./pages/dashboard/DashboardWaiters.tsx";
+import WaiterLogin from "./pages/waiter/WaiterLogin.tsx";
+import WaiterHome from "./pages/waiter/WaiterHome.tsx";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +87,16 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/dashboard/meseros"
+                  element={
+                    <ProtectedRoute requiredRoles={["owner", "admin"]}>
+                      <DashboardWaiters />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/mesero/login" element={<WaiterLogin />} />
+                <Route path="/mesero" element={<WaiterHome />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

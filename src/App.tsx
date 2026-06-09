@@ -19,8 +19,10 @@ import DashboardCategories from "./pages/dashboard/DashboardCategories.tsx";
 import DashboardDishes from "./pages/dashboard/DashboardDishes.tsx";
 import DashboardStats from "./pages/dashboard/DashboardStats.tsx";
 import DashboardWaiters from "./pages/dashboard/DashboardWaiters.tsx";
+import DashboardTables from "./pages/dashboard/DashboardTables.tsx";
 import WaiterLogin from "./pages/waiter/WaiterLogin.tsx";
 import WaiterHome from "./pages/waiter/WaiterHome.tsx";
+import TableJoin from "./pages/m/TableJoin.tsx";
 
 const queryClient = new QueryClient();
 

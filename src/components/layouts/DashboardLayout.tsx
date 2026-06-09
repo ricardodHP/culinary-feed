@@ -28,6 +28,7 @@ import {
   Menu,
   CheckCircle2,
   UserCog,
+  Table2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useManagedRestaurant } from "@/hooks/useManagedRestaurant";
@@ -38,6 +39,7 @@ const navItems = [
   { to: "/dashboard", label: "Información", icon: Store },
   { to: "/dashboard/categorias", label: "Categorías", icon: Tag },
   { to: "/dashboard/platillos", label: "Platillos", icon: UtensilsCrossed },
+  { to: "/dashboard/mesas", label: "Mesas", icon: Table2 },
   { to: "/dashboard/meseros", label: "Meseros", icon: UserCog },
   { to: "/dashboard/estadisticas", label: "Estadísticas", icon: BarChart3 },
 ];

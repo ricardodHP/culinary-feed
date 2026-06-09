@@ -63,9 +63,11 @@ export default function DashboardTables() {
     const label = form.label.trim();
     if (!label) return toast.error("Nombre requerido");
     setBusy(true);
-    const payload: Record<string, unknown> = { restaurant_id: restaurant.id, label };
-    if (form.capacity) payload.capacity = Number(form.capacity);
-    const { error } = await supabase.from("tables").insert(payload);
+    const { error } = await supabase.from("tables").insert({
+      restaurant_id: restaurant.id,
+      label,
+      capacity: form.capacity ? Number(form.capacity) : null,
+    });
     setBusy(false);
     if (error) {
       if (error.code === "23505") toast.error("Ya existe una mesa con ese nombre");

@@ -52,6 +52,38 @@ export type Database = {
           },
         ]
       }
+      diners: {
+        Row: {
+          alias: string | null
+          device_id: string
+          id: string
+          joined_at: string
+          session_id: string
+        }
+        Insert: {
+          alias?: string | null
+          device_id: string
+          id?: string
+          joined_at?: string
+          session_id: string
+        }
+        Update: {
+          alias?: string | null
+          device_id?: string
+          id?: string
+          joined_at?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diners_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "table_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dish_events: {
         Row: {
           category_id: string | null
@@ -339,6 +371,115 @@ export type Database = {
         }
         Relationships: []
       }
+      table_sessions: {
+        Row: {
+          closed_at: string | null
+          code: string
+          created_at: string
+          id: string
+          opened_at: string
+          opened_by_waiter_id: string | null
+          restaurant_id: string
+          status: Database["public"]["Enums"]["table_session_status"]
+          table_id: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          opened_at?: string
+          opened_by_waiter_id?: string | null
+          restaurant_id: string
+          status?: Database["public"]["Enums"]["table_session_status"]
+          table_id: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          opened_at?: string
+          opened_by_waiter_id?: string | null
+          restaurant_id?: string
+          status?: Database["public"]["Enums"]["table_session_status"]
+          table_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_sessions_opened_by_waiter_id_fkey"
+            columns: ["opened_by_waiter_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_sessions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_sessions_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tables: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          created_by_waiter_id: string | null
+          id: string
+          is_active: boolean
+          label: string
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          created_by_waiter_id?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          created_by_waiter_id?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tables_created_by_waiter_id_fkey"
+            columns: ["created_by_waiter_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tables_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -471,6 +612,7 @@ export type Database = {
         | "generic"
       dish_event_type: "view" | "cart_add" | "category_view"
       restaurant_status: "draft" | "published"
+      table_session_status: "open" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -608,6 +750,7 @@ export const Constants = {
       ],
       dish_event_type: ["view", "cart_add", "category_view"],
       restaurant_status: ["draft", "published"],
+      table_session_status: ["open", "closed"],
     },
   },
 } as const

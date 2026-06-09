@@ -7,6 +7,8 @@ Likes use double-tap 'heart-pop' animation and are strictly in-memory (no persis
 Orders are in-person only: complete by showing screen to waiter or via WhatsApp.
 Multi-tenant: public menus live at /r/:slug, owner panel at /dashboard, admin panel at /admin.
 Cuisine templates (mexican/italian/chinese/japanese/generic) override CSS vars + font in RestaurantView.
+Waiters are restaurant-scoped internal accounts (table `waiters`, NOT auth.users); login user+PIN at /mesero/login via edge functions waiter-auth / waiter-admin.
+Mesas tienen sesión única con `code` de 6 chars; cliente entra por /m/:code, se guarda `tableSession` en localStorage y se muestra banner en /r/:slug.
 
 ## Memories
 - [Instagram UI Pattern](mem://diseno/patron-instagram) — Rules for the restaurant menu UI inspired by Instagram
@@ -16,3 +18,4 @@ Cuisine templates (mexican/italian/chinese/japanese/generic) override CSS vars +
 - [UI & Navigation Preferences](mem://ux/preferencias-interfaz) — Navigation labels and cart button persistence rules
 - [Like System](mem://funcionalidades/sistema-likes) — Instagram-style double-tap likes (in-memory only)
 - [Chef Assistant](mem://funcionalidades/asistente-chef) — Virtual assistant flow and UI placement
+- [Mesas y sesiones](mem://funcionalidades/mesas-sesiones) — Tables, QR sessions, diner join flow

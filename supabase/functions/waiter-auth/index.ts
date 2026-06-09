@@ -72,12 +72,15 @@ Deno.serve(async (req) => {
         .eq("restaurant_id", restaurant.id)
         .ilike("username", body.username)
         .maybeSingle();
-      if (!waiter || !waiter.is_active) {
-        return json({ error: "Credenciales inválidas" }, 401);
+      if (!waiter) {
+        return json({ error: `Usuario "${body.username}" no existe en ${restaurant.slug}` }, 401);
+      }
+      if (!waiter.is_active) {
+        return json({ error: "Mesero desactivado" }, 401);
       }
 
       const ok = await bcrypt.compare(body.pin, waiter.pin_hash);
-      if (!ok) return json({ error: "Credenciales inválidas" }, 401);
+      if (!ok) return json({ error: "PIN incorrecto" }, 401);
 
       const token = randomToken();
       const token_hash = await hashToken(token);

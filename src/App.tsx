@@ -98,14 +98,6 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="/dashboard/meseros"
-                  element={
-                    <ProtectedRoute requiredRoles={["owner", "admin"]}>
-                      <DashboardWaiters />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
                   path="/dashboard/mesas"
                   element={
                     <ProtectedRoute requiredRoles={["owner", "admin"]}>

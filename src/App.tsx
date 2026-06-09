@@ -97,8 +97,25 @@ const App = () => (
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/dashboard/meseros"
+                  element={
+                    <ProtectedRoute requiredRoles={["owner", "admin"]}>
+                      <DashboardWaiters />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/mesas"
+                  element={
+                    <ProtectedRoute requiredRoles={["owner", "admin"]}>
+                      <DashboardTables />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/mesero/login" element={<WaiterLogin />} />
                 <Route path="/mesero" element={<WaiterHome />} />
+                <Route path="/m/:code" element={<TableJoin />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

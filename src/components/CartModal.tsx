@@ -21,6 +21,33 @@ const CartModal = () => {
   const { restaurant } = useRestaurantData(slug);
   const [creating, setCreating] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const { session: tableSession } = useTableSession();
+  const inTable = !!tableSession && tableSession.restaurant_slug === slug;
+
+  const sendToTable = async () => {
+    if (!tableSession || items.length === 0) return;
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("order-create", {
+        body: {
+          code: tableSession.code,
+          device_id: getOrCreateDeviceId(),
+          items: items.map((i) => ({ dish_id: i.dish.id, quantity: i.quantity })),
+        },
+      });
+      if (error || (data as { error?: string })?.error) {
+        throw new Error((data as { error?: string })?.error ?? error?.message ?? "Error");
+      }
+      clearCart();
+      setIsCartOpen(false);
+      toast.success("Pedido enviado. El mesero ya lo ve.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const shareUrl = useMemo(() => {
     if (!shared || !restaurant) return "";

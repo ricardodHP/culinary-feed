@@ -45,6 +45,26 @@ export default function WaiterHome() {
   const [form, setForm] = useState({ label: "", capacity: "" });
   const [qrTarget, setQrTarget] = useState<{ code: string; label: string } | null>(null);
   const [closeTarget, setCloseTarget] = useState<TableItem | null>(null);
+  const [busyOrder, setBusyOrder] = useState<string | null>(null);
+  const { orders, updateStatus } = useWaiterOrders(token);
+
+  const pendingByTable = orders.reduce<Record<string, number>>((acc, o) => {
+    if (o.status !== "delivered" && o.status !== "cancelled") {
+      acc[o.table_id] = (acc[o.table_id] ?? 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  const handleAdvance = async (orderId: string, status: OrderStatus) => {
+    setBusyOrder(orderId);
+    try {
+      await updateStatus(orderId, status);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusyOrder(null);
+    }
+  };
 
   const invoke = useCallback(
     async (body: Record<string, unknown>) => {

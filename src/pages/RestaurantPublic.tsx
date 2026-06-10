@@ -1,14 +1,17 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import RestaurantView from "@/components/RestaurantView";
 import { Button } from "@/components/ui/button";
 import { useTableSession } from "@/hooks/useTableSession";
-import { Users, X } from "lucide-react";
+import { Users, X, Receipt } from "lucide-react";
+import TableOrdersDrawer from "@/components/TableOrdersDrawer";
 
 export default function RestaurantPublic() {
   const { slug } = useParams<{ slug: string }>();
   const { loading, notFound, restaurant, categories, dishes } = useRestaurantData(slug);
   const { session, leave } = useTableSession();
+  const [ordersOpen, setOrdersOpen] = useState(false);
 
   if (loading) {
     return (
@@ -44,16 +47,31 @@ export default function RestaurantPublic() {
               Estás en <strong>{session.table_label}</strong> · {session.alias}
             </span>
           </div>
-          <button
-            onClick={leave}
-            className="flex items-center gap-1 opacity-90 hover:opacity-100"
-            aria-label="Salir de la mesa"
-          >
-            Salir <X className="h-3 w-3" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setOrdersOpen(true)}
+              className="flex items-center gap-1 opacity-95 hover:opacity-100 underline-offset-2 hover:underline"
+            >
+              <Receipt className="h-3.5 w-3.5" /> Mis pedidos
+            </button>
+            <button
+              onClick={leave}
+              className="flex items-center gap-1 opacity-90 hover:opacity-100"
+              aria-label="Salir de la mesa"
+            >
+              Salir <X className="h-3 w-3" />
+            </button>
+          </div>
         </div>
       )}
       <RestaurantView restaurant={restaurant} categories={categories} dishes={dishes} />
+      {showBanner && (
+        <TableOrdersDrawer
+          open={ordersOpen}
+          onClose={() => setOrdersOpen(false)}
+          code={session.code}
+        />
+      )}
     </>
   );
 }

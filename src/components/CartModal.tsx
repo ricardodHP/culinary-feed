@@ -1,4 +1,4 @@
-import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle, Users, LogOut, Share2 } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle, Users, LogOut, Share2, Send, Loader2 } from "lucide-react";
 import { useCart, getStoredName } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
@@ -7,6 +7,9 @@ import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
 import SharedCartQrModal from "./SharedCartQrModal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useTableSession } from "@/hooks/useTableSession";
+import { getOrCreateDeviceId } from "@/lib/device";
+import { supabase } from "@/integrations/supabase/client";
 
 const CartModal = () => {
   const {

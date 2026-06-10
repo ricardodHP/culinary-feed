@@ -189,91 +189,132 @@ export default function WaiterHome() {
       </header>
 
       <main className="container max-w-3xl mx-auto px-4 py-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <Table2 className="h-5 w-5" /> Mesas
-          </h2>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" /> Nueva mesa
-          </Button>
-        </div>
+        <Tabs defaultValue="tables">
+          <TabsList className="mb-4 grid grid-cols-2 w-full max-w-xs">
+            <TabsTrigger value="tables">
+              <Table2 className="h-4 w-4 mr-1" /> Mesas
+            </TabsTrigger>
+            <TabsTrigger value="orders">
+              <Receipt className="h-4 w-4 mr-1" /> Pedidos
+              {orders.filter((o) => o.status !== "delivered" && o.status !== "cancelled").length > 0 && (
+                <Badge variant="default" className="ml-1.5 h-5 px-1.5 text-[10px]">
+                  {orders.filter((o) => o.status !== "delivered" && o.status !== "cancelled").length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : tables.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No hay mesas. Crea la primera con "Nueva mesa".
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {tables.map((t) => {
-              const open = !!t.active_session;
-              return (
-                <Card key={t.id} className={open ? "border-primary" : ""}>
-                  <CardContent className="p-3.5 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold truncate">{t.label}</p>
-                      <Badge variant={open ? "default" : "outline"} className="text-[10px]">
-                        {open ? "Ocupada" : "Libre"}
-                      </Badge>
-                    </div>
-                    {t.capacity && (
-                      <p className="text-[11px] text-muted-foreground">Cap. {t.capacity}</p>
-                    )}
-                    {open && t.active_session && (
-                      <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3 w-3" /> {t.active_session.diner_count} comensal(es)
-                      </div>
-                    )}
-                    {!t.is_active ? (
-                      <p className="text-[11px] text-muted-foreground italic">Mesa inactiva</p>
-                    ) : open ? (
-                      <div className="flex gap-1.5">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() =>
-                            setQrTarget({ code: t.active_session!.code, label: t.label })
-                          }
-                        >
-                          <QrCode className="h-3.5 w-3.5" /> QR
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="flex-1"
-                          onClick={() => setCloseTarget(t)}
-                          disabled={busy === t.id}
-                        >
-                          Cerrar
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        onClick={() => openTable(t)}
-                        disabled={busy === t.id}
-                      >
-                        {busy === t.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <TabsContent value="tables" className="space-y-3">
+            <div className="flex items-center justify-end">
+              <Button size="sm" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4" /> Nueva mesa
+              </Button>
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : tables.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                  No hay mesas. Crea la primera con "Nueva mesa".
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {tables.map((t) => {
+                  const open = !!t.active_session;
+                  const pending = pendingByTable[t.id] ?? 0;
+                  return (
+                    <Card key={t.id} className={open ? "border-primary" : ""}>
+                      <CardContent className="p-3.5 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold truncate">{t.label}</p>
+                          <Badge variant={open ? "default" : "outline"} className="text-[10px]">
+                            {open ? "Ocupada" : "Libre"}
+                          </Badge>
+                        </div>
+                        {t.capacity && (
+                          <p className="text-[11px] text-muted-foreground">Cap. {t.capacity}</p>
+                        )}
+                        {open && t.active_session && (
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <Users className="h-3 w-3" /> {t.active_session.diner_count} comensal(es)
+                          </div>
+                        )}
+                        {pending > 0 && (
+                          <div className="text-[11px] text-primary font-semibold flex items-center gap-1">
+                            <Receipt className="h-3 w-3" /> {pending} pedido(s) activos
+                          </div>
+                        )}
+                        {!t.is_active ? (
+                          <p className="text-[11px] text-muted-foreground italic">Mesa inactiva</p>
+                        ) : open ? (
+                          <div className="flex gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() =>
+                                setQrTarget({ code: t.active_session!.code, label: t.label })
+                              }
+                            >
+                              <QrCode className="h-3.5 w-3.5" /> QR
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="flex-1"
+                              onClick={() => setCloseTarget(t)}
+                              disabled={busy === t.id}
+                            >
+                              Cerrar
+                            </Button>
+                          </div>
                         ) : (
-                          <QrCode className="h-3.5 w-3.5" />
-                        )}{" "}
-                        Abrir mesa
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() => openTable(t)}
+                            disabled={busy === t.id}
+                          >
+                            {busy === t.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <QrCode className="h-3.5 w-3.5" />
+                            )}{" "}
+                            Abrir mesa
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="orders" className="space-y-2.5">
+            {orders.length === 0 ? (
+              <Card>
+                <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                  Aún no hay pedidos activos.
+                </CardContent>
+              </Card>
+            ) : (
+              orders.map((o) => (
+                <OrderCard
+                  key={o.id}
+                  order={o}
+                  showTable
+                  busy={busyOrder === o.id}
+                  onAdvance={(s) => handleAdvance(o.id, s)}
+                />
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

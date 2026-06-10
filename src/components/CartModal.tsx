@@ -1,4 +1,4 @@
-import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle, Users, LogOut, Share2 } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, MessageCircle, Users, LogOut, Share2, Send, Loader2 } from "lucide-react";
 import { useCart, getStoredName } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
@@ -7,6 +7,9 @@ import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
 import SharedCartQrModal from "./SharedCartQrModal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useTableSession } from "@/hooks/useTableSession";
+import { getOrCreateDeviceId } from "@/lib/device";
+import { supabase } from "@/integrations/supabase/client";
 
 const CartModal = () => {
   const {
@@ -18,6 +21,33 @@ const CartModal = () => {
   const { restaurant } = useRestaurantData(slug);
   const [creating, setCreating] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const { session: tableSession } = useTableSession();
+  const inTable = !!tableSession && tableSession.restaurant_slug === slug;
+
+  const sendToTable = async () => {
+    if (!tableSession || items.length === 0) return;
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("order-create", {
+        body: {
+          code: tableSession.code,
+          device_id: getOrCreateDeviceId(),
+          items: items.map((i) => ({ dish_id: i.dish.id, quantity: i.quantity })),
+        },
+      });
+      if (error || (data as { error?: string })?.error) {
+        throw new Error((data as { error?: string })?.error ?? error?.message ?? "Error");
+      }
+      clearCart();
+      setIsCartOpen(false);
+      toast.success("Pedido enviado. El mesero ya lo ve.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSending(false);
+    }
+  };
 
   const shareUrl = useMemo(() => {
     if (!shared || !restaurant) return "";
@@ -299,39 +329,56 @@ const CartModal = () => {
               <span className="text-sm text-muted-foreground">Total estimado</span>
               <span className="text-lg font-bold text-foreground">${totalPrice} MXN</span>
             </div>
-            <div className="flex gap-2">
+            {inTable ? (
               <Button
-                className="flex-1 h-11 text-sm font-semibold"
-                onClick={() => setIsCartOpen(false)}
+                className="w-full h-11 text-sm font-semibold"
+                onClick={sendToTable}
+                disabled={sending}
               >
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Mostrar al mesero
+                {sending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Enviar a la mesa ({tableSession?.table_label})
               </Button>
-              <Button
-                variant="outline"
-                className="h-11 px-4 text-sm font-semibold border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10"
-                onClick={() => {
-                  const lines = items.map(
-                    (i) => `• ${i.quantity}x ${i.dish.name} — $${i.dish.price * i.quantity}`
-                  );
-                  const msg = `🍽️ *Mi Pedido*\n\n${lines.join("\n")}\n\n*Total: $${totalPrice} MXN*`;
-                  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-                }}
-              >
-                <MessageCircle className="w-4 h-4" />
-                WhatsApp
-              </Button>
-            </div>
-            {!shared && (
-              <Button
-                variant="secondary"
-                className="w-full h-10 text-sm font-semibold"
-                onClick={handleCreateShared}
-                disabled={creating}
-              >
-                <Users className="w-4 h-4 mr-2" />
-                {creating ? "Creando..." : "Compartir con amigos (carrito en vivo)"}
-              </Button>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 h-11 text-sm font-semibold"
+                    onClick={() => setIsCartOpen(false)}
+                  >
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Mostrar al mesero
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-11 px-4 text-sm font-semibold border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10"
+                    onClick={() => {
+                      const lines = items.map(
+                        (i) => `• ${i.quantity}x ${i.dish.name} — $${i.dish.price * i.quantity}`
+                      );
+                      const msg = `🍽️ *Mi Pedido*\n\n${lines.join("\n")}\n\n*Total: $${totalPrice} MXN*`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                    }}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp
+                  </Button>
+                </div>
+                {!shared && (
+                  <Button
+                    variant="secondary"
+                    className="w-full h-10 text-sm font-semibold"
+                    onClick={handleCreateShared}
+                    disabled={creating}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    {creating ? "Creando..." : "Compartir con amigos (carrito en vivo)"}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         )}

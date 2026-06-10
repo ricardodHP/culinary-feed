@@ -19,3 +19,4 @@ Mesas tienen sesión única con `code` de 6 chars; cliente entra por /m/:code, s
 - [Like System](mem://funcionalidades/sistema-likes) — Instagram-style double-tap likes (in-memory only)
 - [Chef Assistant](mem://funcionalidades/asistente-chef) — Virtual assistant flow and UI placement
 - [Mesas y sesiones](mem://funcionalidades/mesas-sesiones) — Tables, QR sessions, diner join flow
+- [Pedidos por mesa](mem://funcionalidades/pedidos-mesa) — Orders sent from cart to table session, waiter-managed with kitchen states

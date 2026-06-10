@@ -183,6 +183,125 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          created_at: string
+          dish_id: string
+          dish_name: string
+          id: string
+          notes: string | null
+          order_id: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          dish_id: string
+          dish_name: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          quantity: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          dish_id?: string
+          dish_name?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          created_by_alias: string | null
+          created_by_diner_id: string | null
+          delivered_at: string | null
+          id: string
+          notes: string | null
+          restaurant_id: string
+          session_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          table_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_alias?: string | null
+          created_by_diner_id?: string | null
+          delivered_at?: string | null
+          id?: string
+          notes?: string | null
+          restaurant_id: string
+          session_id: string
+          status?: Database["public"]["Enums"]["order_status"]
+          table_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_alias?: string | null
+          created_by_diner_id?: string | null
+          delivered_at?: string | null
+          id?: string
+          notes?: string | null
+          restaurant_id?: string
+          session_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          table_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_created_by_diner_id_fkey"
+            columns: ["created_by_diner_id"]
+            isOneToOne: false
+            referencedRelation: "diners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "table_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -611,6 +730,12 @@ export type Database = {
         | "japanese"
         | "generic"
       dish_event_type: "view" | "cart_add" | "category_view"
+      order_status:
+        | "pending"
+        | "preparing"
+        | "ready"
+        | "delivered"
+        | "cancelled"
       restaurant_status: "draft" | "published"
       table_session_status: "open" | "closed"
     }
@@ -749,6 +874,7 @@ export const Constants = {
         "generic",
       ],
       dish_event_type: ["view", "cart_add", "category_view"],
+      order_status: ["pending", "preparing", "ready", "delivered", "cancelled"],
       restaurant_status: ["draft", "published"],
       table_session_status: ["open", "closed"],
     },

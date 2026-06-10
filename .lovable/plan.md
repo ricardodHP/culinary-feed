@@ -1,103 +1,95 @@
-
-# Etapa 2 — Mesas, sesiones de mesa y QR
+# Etapa 3 — Pedidos por mesa
 
 ## Alcance
 
-- **Mesas (`tables`)**: catálogo por restaurante. CRUD desde el dashboard del owner y desde la vista operativa del mesero.
-- **Sesiones de mesa (`table_sessions`)**: una sesión abierta por mesa a la vez. La abre el mesero, genera un QR único; los clientes la escanean y entran a la mesa.
-- **Comensales (`diners`)**: cada cliente que entra a la sesión queda registrado con alias opcional ("Invitado #N" si no lo da).
-- **Sin órdenes todavía** — eso es Etapa 3.
+- **Pedido grupal por mesa**: los comensales de una `table_session` agregan platos a un pedido común. Cada "ronda" enviada al mesero crea un nuevo `order`.
+- **Solo se muestra al mesero**: no hay vista de cocina separada; el mesero gestiona estados desde `/mesero`.
+- **Estados**: `pending` → `preparing` → `ready` → `delivered` (también `cancelled`).
+- **Sin cuenta/total** todavía — Etapa 4.
 
 ## Modelo de datos
 
-### `public.tables`
-- `restaurant_id` (FK)
-- `label` (texto corto: "Mesa 5", "Terraza A")
-- `capacity` (int, opcional)
-- `is_active` (bool, default true)
-- `created_by_waiter_id` (nullable — mesas creadas por mesero quedan trazadas)
-- Único: `(restaurant_id, lower(label))`
+### `public.orders`
+- `restaurant_id`, `session_id`, `table_id` (FK)
+- `status` (enum `order_status`: pending/preparing/ready/delivered/cancelled)
+- `notes` (texto opcional libre del comensal)
+- `created_by_diner_id` (nullable, FK a `diners`)
+- `created_by_alias` (texto snapshot — sobrevive si se borra el diner)
+- `created_at`, `updated_at`, `delivered_at` (nullable)
 
-### `public.table_sessions`
-- `restaurant_id`, `table_id` (FK)
-- `code` (texto corto único global, ej. `MX7K2P` — va en el QR para URLs cortas)
-- `opened_by_waiter_id`
-- `opened_at`, `closed_at` (nullable)
-- `status` (enum: `open`, `closed`)
-- Índice parcial: una sola fila `status='open'` por `table_id`.
+### `public.order_items`
+- `order_id` (FK, cascade)
+- `dish_id` (FK)
+- `dish_name` (snapshot)
+- `unit_price` (snapshot)
+- `quantity` (int >= 1)
+- `notes` (opcional, por item)
 
-### `public.diners`
-- `session_id` (FK)
-- `device_id` (uuid del cliente, generado en localStorage)
-- `alias` (nullable; si null → "Invitado #N")
-- `joined_at`
-- Único: `(session_id, device_id)`
+Sin tabla de cuenta — la suma se calcula on-the-fly cuando haga falta.
 
-## RLS
+## RLS y acceso
 
-- `tables`:
-  - SELECT/INSERT/UPDATE/DELETE para `admin` o `auth.uid() = restaurants.owner_id`.
-  - INSERT/UPDATE adicionales para el mesero se hacen vía edge function con service role (el mesero no tiene `auth.uid`).
-  - `anon` puede SELECT solo de mesas activas de restaurantes `published` (no expone nada sensible y simplifica vistas públicas si las necesitamos luego). *Opcional — empezamos sin grant a `anon` y lo añadimos si hace falta.*
-- `table_sessions`: sin acceso desde el cliente. Todo vía edge functions.
-- `diners`: lectura/escritura pública controlada por edge function (`session-join`, `session-state`).
+- `orders` y `order_items`: sin acceso directo desde el cliente público. Todo se enruta por edge functions con service role.
+- Owner del restaurante: lectura vía RLS (`auth.uid() = restaurants.owner_id`) para futura vista en dashboard.
+- Mesero: pasa por edge functions autenticadas con su token (`useWaiterSession`).
 
 ## Edge functions
 
-1. **`waiter-tables`** (requiere token mesero): `list`, `create`, `update`, `set_active`. Owner sigue usando RLS desde el cliente; el mesero pasa por esta función.
-2. **`session-open`** (token mesero): abre sesión sobre una mesa, genera `code` único (6 chars base32 sin ambiguos), devuelve `{ session, qr_url }`. Falla si ya hay sesión abierta para esa mesa.
-3. **`session-close`** (token mesero): cierra sesión activa.
-4. **`session-join`** (público): recibe `{ code, device_id, alias? }`. Resuelve sesión por `code`, upsert `diners`, devuelve `{ session, table, restaurant, diner }`.
-5. **`session-state`** (público): por `code` o `session_id` + `device_id`, devuelve estado actual (mesa, comensales). Útil para el cliente y para la vista operativa del mesero.
+1. **`order-create`** (público): `{ code, device_id, items: [{dish_id, quantity, notes?}], notes? }`.
+   - Valida sesión open y diner registrado.
+   - Crea `order` + `order_items` con snapshot de nombre/precio desde `dishes`.
+   - Devuelve `{ order }`.
+2. **`orders-list`** (waiter token): lista pedidos del restaurante del mesero.
+   - Filtros opcionales: `session_id`, `status[]`, `since` (default: últimas 24h y no entregados).
+   - Devuelve pedidos con items y datos de mesa/diner.
+3. **`order-update-status`** (waiter token): `{ order_id, status }`.
+   - Valida transición permitida (no retroceder desde `delivered`/`cancelled`).
+   - Setea `delivered_at` cuando corresponde.
+4. **`session-orders`** (público): por `code` + `device_id`, devuelve pedidos de la sesión actual con sus estados — para que los comensales vean el avance.
 
-Todas con CORS, validación Zod. `session-join` y `session-state` son públicas (`verify_jwt = false`).
+Todas con CORS, validación Zod.
 
 ## UI
 
-### Owner (`/dashboard/mesas`)
-- Lista de mesas: label, capacidad, estado, sesión activa (sí/no), acciones.
-- Botón **"Nueva mesa"** → modal (label, capacity opcional).
-- Editar / activar-desactivar / eliminar (si no tiene sesión activa).
+### Cliente — Carrito y banner de sesión
+- En `CartModal`, cuando hay `tableSession` activa: reemplazar botón "Pedir por WhatsApp" por **"Enviar a la mesa"**.
+  - Llama `order-create` con los items del carrito local.
+  - Limpia el carrito y muestra toast "Pedido enviado. El mesero ya lo ve."
+- Si NO hay `tableSession`: mantener flujo actual de WhatsApp/mostrar pantalla.
+- En el banner de sesión de `RestaurantPublic`: añadir botón **"Mis pedidos"** que abre un drawer/modal con los pedidos de la sesión y su estado en vivo (polling cada 8s + refresh al volver al foco).
 
-### Mesero (`/mesero`)
-- Reemplazamos el placeholder por tablero operativo:
-  - Lista de mesas del restaurante, cada tarjeta muestra: label, estado (`libre` / `ocupada`), nº de comensales si está abierta.
-  - Tarjeta **libre** → botón **"Abrir mesa"** → genera sesión, abre modal con QR + código.
-  - Tarjeta **ocupada** → botón **"Ver QR"** y **"Cerrar mesa"** (con confirmación).
-  - Botón **"Nueva mesa"** arriba (modal igual que el de owner, vía `waiter-tables`).
+### Mesero — `/mesero`
+- Añadir tab/sección **"Pedidos"** junto a "Mesas":
+  - Lista agrupada por mesa con sesión abierta.
+  - Cada `order` muestra: alias del comensal, items + cantidades, notas, tiempo desde envío, estado actual.
+  - Botones de acción según estado: `Tomar` (→ preparing), `Listo` (→ ready), `Entregado` (→ delivered), `Cancelar`.
+  - Refresh por polling (5s) — sin realtime para mantener simple.
+- Badge en la tarjeta de cada mesa del tablero existente: nº de pedidos pendientes.
 
-### Modal QR de sesión
-- Muestra QR grande apuntando a `https://<host>/m/<code>`.
-- Debajo, el código en grande: **"Código de mesa: MX7K2P"** y nota: "El cliente puede escanear el QR o ingresar este código en el menú."
-- Botón copiar URL.
-
-### Cliente — entrada por QR (`/m/:code`)
-- Página pública ligera:
-  - Resuelve la sesión vía `session-join` con `device_id` (de localStorage).
-  - Modal opcional: input **"¿Cómo te llamamos?"** con botón "Continuar como invitado".
-  - Tras unirse, redirige a `/r/:slug?session=:code` (el menú existente). Guarda `{ code, session_id, diner_id, alias }` en localStorage bajo `tableSession`.
-- En `RestaurantPublic`, si detecta `tableSession`, muestra un banner discreto: **"Estás en {label} · {alias}"** con opción de salir.
+### Owner — sin cambios visuales en esta etapa
+- La data queda disponible vía RLS para una futura vista en dashboard (Etapa 4).
 
 ## Detalles técnicos
 
-- `code` de sesión: 6 chars de alfabeto `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (sin 0/O/1/I), generado en edge function con reintento ante colisión.
-- QR: usamos la librería ya presente (`SharedCartQrModal` la usa) — reusar el mismo componente QR.
-- `device_id` cliente: helper `getOrCreateDeviceId()` en `src/lib/device.ts` (uuid v4 en localStorage, key `device_id`). Si ya existe uno por likes/shared cart, reusarlo.
-- Hook nuevo `useTableSession()` lee/escribe `tableSession` en localStorage y expone `{ session, alias, leave() }`.
-- Reusar `useWaiterSession()` para llamadas autenticadas del mesero (Authorization: Bearer <waiter token>).
+- Enum `order_status` nuevo. Trigger `set_updated_at` ya existe.
+- Snapshot de `dish_name`/`unit_price` en `order_items` para que cambios futuros del menú no alteren historial.
+- `useTableOrders(code)` hook nuevo: polling de `session-orders`, expone `{ orders, refresh }`.
+- `useWaiterOrders()` hook: polling de `orders-list`, expone `{ orders, updateStatus, refresh }`.
+- Componente `OrderCard` reutilizable entre vista cliente y mesero (variante con/sin botones).
 
 ## Fuera de alcance
 
-- Órdenes individuales y grupales.
-- Asignar items del carrito existente a la sesión de mesa (eso lo unimos en Etapa 3 — el carrito grupal actual seguirá funcionando como está).
-- Cobros / cuenta dividida.
+- Cuenta / total / split / cobros.
+- Vista de cocina dedicada.
+- Edición de pedido tras enviar (por ahora se cancela y se crea otro).
+- Notificaciones push.
 
 ## Entregables
 
-1. Migración SQL: `tables`, `table_sessions`, `diners`, índices, RLS, GRANTs.
-2. Edge functions: `waiter-tables`, `session-open`, `session-close`, `session-join`, `session-state`.
-3. Páginas: `/dashboard/mesas`, `/m/:code`. Refactor de `/mesero` a tablero operativo.
-4. Componente `TableQrModal` (reusa el QR de `SharedCartQrModal`).
-5. Hooks `useTableSession`, helper `device.ts`.
-6. Banner de sesión activa en `RestaurantPublic`.
-7. Actualizar memoria con: "Mesas y sesiones de mesa: mesero abre sesión sobre una mesa, genera QR con `code` corto; cliente entra por `/m/:code`, queda como `diner` con alias opcional en `localStorage.tableSession`."
+1. Migración SQL: enum `order_status`, tablas `orders` y `order_items`, índices, RLS, GRANTs, trigger `updated_at`.
+2. Edge functions: `order-create`, `orders-list`, `order-update-status`, `session-orders`.
+3. Hooks: `useTableOrders`, `useWaiterOrders`. Componente `OrderCard`.
+4. Modificación `CartModal` (botón "Enviar a la mesa" cuando hay sesión).
+5. Drawer "Mis pedidos" lanzado desde el banner de `RestaurantPublic`.
+6. Sección "Pedidos" en `/mesero` con gestión de estados + badges en tablero de mesas.
+7. Actualizar memoria del proyecto: "Pedidos por mesa: order grupal por `table_session` con estados pending→preparing→ready→delivered, gestionado por el mesero".

@@ -13,10 +13,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, LogOut, Plus, QrCode, Users, Table2 } from "lucide-react";
+import { Loader2, LogOut, Plus, QrCode, Users, Table2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { useWaiterSession } from "@/hooks/useWaiterSession";
 import TableQrModal from "@/components/TableQrModal";
+import OrderCard from "@/components/OrderCard";
+import { useWaiterOrders } from "@/hooks/useWaiterOrders";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { OrderStatus } from "@/hooks/useTableOrders";
 
 interface TableItem {
   id: string;

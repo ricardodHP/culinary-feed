@@ -329,39 +329,56 @@ const CartModal = () => {
               <span className="text-sm text-muted-foreground">Total estimado</span>
               <span className="text-lg font-bold text-foreground">${totalPrice} MXN</span>
             </div>
-            <div className="flex gap-2">
+            {inTable ? (
               <Button
-                className="flex-1 h-11 text-sm font-semibold"
-                onClick={() => setIsCartOpen(false)}
+                className="w-full h-11 text-sm font-semibold"
+                onClick={sendToTable}
+                disabled={sending}
               >
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Mostrar al mesero
+                {sending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Enviar a la mesa ({tableSession?.table_label})
               </Button>
-              <Button
-                variant="outline"
-                className="h-11 px-4 text-sm font-semibold border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10"
-                onClick={() => {
-                  const lines = items.map(
-                    (i) => `• ${i.quantity}x ${i.dish.name} — $${i.dish.price * i.quantity}`
-                  );
-                  const msg = `🍽️ *Mi Pedido*\n\n${lines.join("\n")}\n\n*Total: $${totalPrice} MXN*`;
-                  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-                }}
-              >
-                <MessageCircle className="w-4 h-4" />
-                WhatsApp
-              </Button>
-            </div>
-            {!shared && (
-              <Button
-                variant="secondary"
-                className="w-full h-10 text-sm font-semibold"
-                onClick={handleCreateShared}
-                disabled={creating}
-              >
-                <Users className="w-4 h-4 mr-2" />
-                {creating ? "Creando..." : "Compartir con amigos (carrito en vivo)"}
-              </Button>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 h-11 text-sm font-semibold"
+                    onClick={() => setIsCartOpen(false)}
+                  >
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Mostrar al mesero
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-11 px-4 text-sm font-semibold border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10"
+                    onClick={() => {
+                      const lines = items.map(
+                        (i) => `• ${i.quantity}x ${i.dish.name} — $${i.dish.price * i.quantity}`
+                      );
+                      const msg = `🍽️ *Mi Pedido*\n\n${lines.join("\n")}\n\n*Total: $${totalPrice} MXN*`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+                    }}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp
+                  </Button>
+                </div>
+                {!shared && (
+                  <Button
+                    variant="secondary"
+                    className="w-full h-10 text-sm font-semibold"
+                    onClick={handleCreateShared}
+                    disabled={creating}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    {creating ? "Creando..." : "Compartir con amigos (carrito en vivo)"}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         )}
